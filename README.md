@@ -60,13 +60,23 @@ Graham).
 
 ## Links
 
+- https://swagger.io/specification/
+- https://docs.python.org/3/library/json.html
+- https://agilemanifesto.org
+- https://en.wikipedia.org/wiki/Unix\_philosophy
+- https://daringfireball.net/projects/markdown/
+- https://github.com
 - https://docs.pydantic.dev/latest/
 - https://marshmallow.readthedocs.io/en/stable/
 - https://www.paulgraham.com
-- https://swagger.io/specification/
 - https://github.com/boto/botocore
-- https://docs.python.org/3/library/json.html
 - https://pypi.org/project/PyYAML/
+
+### TODO
+
+- hyperlinks
+- code
+- data source
 
 
 
