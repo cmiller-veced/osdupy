@@ -74,14 +74,31 @@ Graham).
 - https://github.com/boto/botocore
 - https://pypi.org/project/PyYAML/
 
+- https://www.postman.com
+- https://json-schema.org
+
+
 ### TODO
 
 - hyperlinks
 - code
 - data source
 
+### Potential data sources
 
+- https://documents.worldbank.org/en/publication/documents-reports/api
+- https://fred.stlouisfed.org/docs/api/fred/
+- https://opensource.fb.com/projects/
+- https://developer.x.com/en/docs/x-api
 
+### swagger petstore
+
+- https://petstore.swagger.io/v2/swagger.json
+- https://petstore.swagger.io/v2/swagger.json
+- https://petstore.swagger.io/v2/swagger.json
+- https://petstore.swagger.io/v2/swagger.json
+- https://petstore.swagger.io/v2/swagger.json
+- https://petstore.swagger.io/v2/swagger.json
 
 
 
