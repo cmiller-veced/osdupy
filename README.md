@@ -66,6 +66,15 @@ Graham).
 - https://en.wikipedia.org/wiki/Unix_philosophy
 - https://github.com/boto/botocore
 - https://www.paulgraham.com
+- https://d3js.org
+
+d3js is a javascript library that provides a minimal wrapper around SVG.  If you
+understand SVG, d3js will make a lot of sense to you.
+
+- https://aframe.io/docs/1.6.0/introduction/
+
+Aframe is a javascript library around (WebGL?).
+
 
 
 ### Our tools
@@ -74,10 +83,13 @@ Graham).
 - https://docs.python.org/3/library/json.html
 - https://daringfireball.net/projects/markdown/
 - https://github.com
-- https://pypi.org/project/PyYAML/
-- https://www.postman.com
 - https://json-schema.org
 
+-----------------------------
+
+- https://www.postman.com
+- https://pypi.org/project/PyYAML/
+- https://jinja.palletsprojects.com/en/3.1.x/
 
 ### Not our tools
 
@@ -88,6 +100,17 @@ justification.
 
 - https://docs.pydantic.dev/latest/
 - https://marshmallow.readthedocs.io/en/stable/
+
+These tools tend to make life easy for programmers and their managers.  Most
+programmers are familiar with the approach.  It's not too demanding and provides
+a simple, rigid interface.  Our goal is to make life easy for the data analyst
+or manager who is interested in exploring the interface in real time without
+waiting for programmers to define their options for them.
+
+The code we write will demand more from the programmer but will be far more
+compact than code written using the above approach.  Also far more flexible.
+The data analyst will thank us.
+
 
 
 ### TODO
@@ -113,6 +136,42 @@ justification.
 - https://petstore.swagger.io/v2/swagger.json
 
 
+
+### Interfaces / handoffs / context switch / complexity
+
+Cognitive load is not a joke.
+
+
+### Functional programming in Python
+
+Python has almost all functional programming features of Lisp, except macros.
+
+To get a handle on functional programming in Python, decorators are a good
+starting point.  The coder who has a solid understanding of decorators is well
+on the way to having a good grounding in functional programming in Python.
+There are several things to consider.
+
+- basic decorator
+- class-based decorator
+
+The first thing with decorators is to understand the simplest possible version.
+Then we can move on to class-based decorators.   One could gain a solid
+understanding without ever using class-based decorators but they are good to
+know about and understand.  One could make the argument that a class-based
+decorator is sort of like object-oriented Perl or a dog walking on its hind
+legs.  You can do it but it is ugly and does not work well.  So feel free to
+skip class-based decorators at first but come back and figure them out later.
+
+Parameterized decorators, on the other hand, are essential for a good
+understanding.  Decorators (and particularly parameterized decorators) are
+a special case of Python functional programming.  But once you really understand
+parameterized decorators you will begin to understand where functional
+programming can be used most effectively.
+
+Python is a multi-paradigm language.  It's support for functional programming is
+solid and baked in.  It's not going away.  Treating Python as a strictly OO
+language is like sawing off one of the legs of your three-legged stool.
+You miss out on a lot.
 
 
 
