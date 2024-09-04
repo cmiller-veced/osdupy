@@ -60,22 +60,34 @@ that prefers the xxx/marshmallow/pydantic approach of manually defined Python
 classes, so much the better.  We will run circles around them.  (read Paul
 Graham).
 
-## Links
+### Our motivation
+
+- https://agilemanifesto.org
+- https://en.wikipedia.org/wiki/Unix_philosophy
+- https://github.com/boto/botocore
+- https://www.paulgraham.com
+
+
+### Our tools
 
 - https://swagger.io/specification/
 - https://docs.python.org/3/library/json.html
-- https://agilemanifesto.org
-- https://en.wikipedia.org/wiki/Unix_philosophy
 - https://daringfireball.net/projects/markdown/
 - https://github.com
-- https://docs.pydantic.dev/latest/
-- https://marshmallow.readthedocs.io/en/stable/
-- https://www.paulgraham.com
-- https://github.com/boto/botocore
 - https://pypi.org/project/PyYAML/
-
 - https://www.postman.com
 - https://json-schema.org
+
+
+### Not our tools
+
+There is nothing wrong with the below tools.  If we have reason, we will use
+them.  But it requires justification.  Unfamiliarity with functional programming
+in Python is not justification.  "Everyone does it that way." is not
+justification.
+
+- https://docs.pydantic.dev/latest/
+- https://marshmallow.readthedocs.io/en/stable/
 
 
 ### TODO
@@ -99,6 +111,8 @@ Graham).
 - https://petstore.swagger.io/v2/swagger.json
 - https://petstore.swagger.io/v2/swagger.json
 - https://petstore.swagger.io/v2/swagger.json
+
+
 
 
 
