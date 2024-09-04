@@ -40,7 +40,7 @@ Using swagger as data has multiple benefits.
 - no duplication of effort that went into swagger defs
 - a record of swagger errors
 
-We do not have to define our data is someone else (the swagger author) has
+We do not have to define our data if someone else (the swagger author) has
 already done it.  This is a huge benefit.
 
 Our tests will reveal any errors in the swagger.  Errors are corrected in the
@@ -57,6 +57,19 @@ have that we can write code quickly to leverage the API.  If we have competition
 that prefers the xxx/marshmallow/pydantic approach of manually defined Python
 classes, so much the better.  We will run circles around them.  (read Paul
 Graham).
+
+## Links
+
+- https://docs.pydantic.dev/latest/
+- https://marshmallow.readthedocs.io/en/stable/
+- https://www.paulgraham.com
+- https://swagger.io/specification/
+- https://github.com/boto/botocore
+- https://docs.python.org/3/library/json.html
+- https://pypi.org/project/PyYAML/
+
+
+
 
 
 
