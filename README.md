@@ -12,6 +12,8 @@ We follow some straightforward principles that I've learned by studying ...
 
 - the Unix Philosophy
 - the Agile Manifesto
+- good code
+- bad code
 - etc
 
 There are important factors that are routinely ignored in typical Python
