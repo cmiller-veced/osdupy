@@ -65,7 +65,7 @@ Graham).
 - https://swagger.io/specification/
 - https://docs.python.org/3/library/json.html
 - https://agilemanifesto.org
-- https://en.wikipedia.org/wiki/Unix\_philosophy
+- https://en.wikipedia.org/wiki/Unix_philosophy
 - https://daringfireball.net/projects/markdown/
 - https://github.com
 - https://docs.pydantic.dev/latest/
