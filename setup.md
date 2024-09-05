@@ -16,7 +16,8 @@ but essential
 
 ### Git
 
-Avoid `merge`.  It's always more trouble than it's worth.
+Avoid `merge`.  It's always more trouble than it's worth.  Except when merging
+a branch.
 
 Commonly used commands ...
 
@@ -29,8 +30,7 @@ Commonly used commands ...
 - always work on a branch
 - never commit to main/master
 - never commit to another's branch without permission
-- squash all commits on a branch.
-
+- squash all commits on a branch. https://www.git-tower.com/learn/git/faq/git-squash
 
 
 
