@@ -12,6 +12,10 @@ def raw_swagger(at_path):
         return json.load(fh)
 
 
+# Right away after parsing we face the problem of making sense of a big, gnarly
+# json doc.  Rather than give up and revert to imitating java in python we deal
+# with it.  Using the standard library.
+
 # aside
 # Recursion over a heterogeneous data structure.
 @singledispatch
@@ -32,6 +36,16 @@ def _(arg: dict, indent=0):
 
 # This is another side of the functional/OO thingy.  A generic function, in
 # other words a function that operates differently on differing types.
+
+# It turns out the  Python language has this amazing thing that makes it easy to
+# work with json data.  It's called the Python language.  Not some third party
+# library.  "batteries included" means it has a lot of amazing features out of
+# the box.  So we can do amazing things in a few lines.  Why use a third party
+# library when you can do that?
+#
+# btw, each 3rd party library adds complexity.  We should account for that in
+# meeasurements of complexity.
+# and cognitive load.
 
 
 def go():
