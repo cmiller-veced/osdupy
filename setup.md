@@ -33,4 +33,10 @@ Commonly used commands ...
 - squash all commits on a branch. https://www.git-tower.com/learn/git/faq/git-squash
 
 
+## Python
+
+### pip
+
+`python -m pip `
+`python -m pip install pytest`
 
