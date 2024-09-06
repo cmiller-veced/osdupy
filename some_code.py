@@ -16,7 +16,6 @@ def raw_swagger(at_path):
 
 
 def validate_jsonschema_with_refs():
-  try:
     good_ones = [
         {"name": 'kittyX', 'photoUrls': []},
         {"name": 'kittyX', 'photoUrls': [], 'category': {}},
@@ -48,7 +47,6 @@ def validate_jsonschema_with_refs():
         validate(instance={}, schema=schema)
         print('crap!')
 
-  finally:
     globals().update(locals())
 
 
