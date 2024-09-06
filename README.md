@@ -84,6 +84,8 @@ Aframe is a javascript library around (WebGL?).
 - https://daringfireball.net/projects/markdown/
 - https://github.com
 - https://json-schema.org
+- https://json-schema.org/understanding-json-schema
+- https://developer.mozilla.org/en-US/docs/Web/API/
 
 -----------------------------
 
