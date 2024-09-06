@@ -5,6 +5,16 @@ There is low-hanging fruit and we are going to pluck it.
 First step is to read swagger / OpenAPI files.
 These files are in json/yaml.
 We shall take the things we find there and represent them as data.
+DONE
+
+Next step is to validate data against the swagger.  The tricky part is getting
+references.  Worthwhile because it keeps us in the original data format.  No
+DAO (data access objects).
+
+Other tasks present themselves as we go.  Navigating json data is tedious
+without good tools so we create the tools as we go.
+Yes, I know there are tools out there already.  But I want GOOD tools.
+
 
 # How to do it?
 
@@ -130,13 +140,9 @@ The data analyst will thank us.
 
 ### swagger petstore
 
-- https://petstore.swagger.io/v2/swagger.json
-- https://petstore.swagger.io/v2/swagger.json
-- https://petstore.swagger.io/v2/swagger.json
-- https://petstore.swagger.io/v2/swagger.json
-- https://petstore.swagger.io/v2/swagger.json
-- https://petstore.swagger.io/v2/swagger.json
+We are currently using the Petstore data from the swagger docs.
 
+- https://petstore.swagger.io/v2/swagger.json
 
 
 ### Interfaces / handoffs / context switch / complexity
@@ -175,5 +181,9 @@ solid and baked in.  It's not going away.  Treating Python as a strictly OO
 language is like sawing off one of the legs of your three-legged stool.
 You miss out on a lot.
 
+
+# Glossary
+
+- DAO: data in object drag
 
 
