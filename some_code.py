@@ -54,8 +54,6 @@ def validate_jsonschema_with_refs():
     globals().update(locals())
 
 
-
-
 # Working with json data #
 # ######################################################################## #
 
@@ -76,7 +74,7 @@ def _(arg: dict, indent=0):
         recur(key, indent=indent+1)
         recur(arg[key], indent=indent+1)
         print()
-# This is good but extremely limited.
+# TODO: This is good but extremely limited.
 # It does the recursion correctly but simply prints out stuff in a totally rigid
 # way.
 
