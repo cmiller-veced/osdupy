@@ -54,17 +54,12 @@ def validate_jsonschema_with_refs():
     globals().update(locals())
 
 
-validate_jsonschema_with_refs()
 
 
 # Working with json data #
 # ######################################################################## #
 
-# Right away after parsing we face the problem of making sense of a big, gnarly
-# json doc.  Rather than give up and revert to imitating java in python we deal
-# with it.  Using the standard library.
 
-# aside
 # Recursion over a heterogeneous data structure.
 @singledispatch
 def recur(arg, indent=0):
@@ -81,28 +76,36 @@ def _(arg: dict, indent=0):
         recur(key, indent=indent+1)
         recur(arg[key], indent=indent+1)
         print()
-
-# This is another side of the functional/OO thingy.  A generic function, in
-# other words a function that operates differently on differing types.
-
-# It turns out the  Python language has this amazing thing that makes it easy to
-# work with json data.  It's called the Python language.  Not some third party
-# library.  "batteries included" means it has a lot of amazing features out of
-# the box.  So we can do amazing things in a few lines.  Why use a third party
-# library when you can do that?
-#
-# btw, each 3rd party library adds complexity.  We should account for that in
-# meeasurements of complexity.
-# and cognitive load.
-# 
-# In addition to adding overhead at deployment time, each 3rd party lib tends to
-# have its own way of looking at the world.  When we adopt the lib we have to
-# think in that way.  There's nothing wrong with that.  But if it distracts from
-# the problem at hand then we have to devote some of our limited mental capacity
-# to that.  Each such context switch adds up.
+# This is good but extremely limited.
+# It does the recursion correctly but simply prints out stuff in a totally rigid
+# way.
 
 
-def go():
+# fetch from deeply nested dicts.
+# TODO: add ability to do similar with lists in the mix.
+@singledispatch
+def deep_key(keys, dct):
+    keys.reverse()
+    while keys:
+        key = keys.pop()
+        dct = dct[key]
+    return dct
+
+@deep_key.register
+def _(keys: str, dct):
+    return deep_key(keys.split(), dct)
+
+
+# Test #
+# ######################################################################## #
+    
+
+def test_deep_key():
+    rs = raw_swagger(pet_swagger_local)
+    assert deep_key('definitions Category', rs) == rs['definitions']['Category']
+
+
+def test_recursion():
   try:
     rs = raw_swagger(pet_swagger_local)
     print(len(str(rs)))
@@ -119,5 +122,11 @@ def go():
     globals().update(locals())
 
 
-go()
+def test_all():
+    test_deep_key()
+    test_recursion()
+    validate_jsonschema_with_refs()
+
+
+#test_all()
 
