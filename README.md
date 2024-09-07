@@ -103,6 +103,9 @@ Aframe is a javascript library around (WebGL?).
 - https://pypi.org/project/PyYAML/
 - https://jinja.palletsprojects.com/en/3.1.x/
 
+Jinja does for text strings, something like what d3js does for svg.  A minimal
+way of inserting data into a fixed string.
+
 ### Not our tools
 
 There is nothing wrong with the below tools.  If we have reason, we will use
