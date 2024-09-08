@@ -127,4 +127,39 @@ def test_all():
 
 
 #test_all()
+# TODO: test the recursion by finding all dict items with key == '4xx'
+#   esp 415
+
+
+# Call an http(s) API #
+# ######################################################################## #
+
+from pprint import pprint
+import httpx  # giving it a try
+
+if 0:
+    r = httpx.get('https://www.example.org/')
+    r.status_code
+    r.headers['content-type']
+    r.text
+    ok = httpx.post('https://httpbin.org/post', data=payload)  # ok
+
+petstore_api_base = 'https://petstore.swagger.io/v2/'
+petstore_api_base = 'https://petstore.swagger.io/v2'
+api_key = 'special-key'
+endpoint = '/pet'
+verb = 'POST'
+payload = {"name": 'kittyX', 'photoUrls': [], 'category': {}, 'status': 'sold'}
+payload = {"name": 'kittyX', 'photoUrls': ['fu', 'b'], 'category': {}, 'status': 'sold'}
+
+#rp = httpx.post(petstore_api_base+endpoint, data=payload)  # 415
+ep = petstore_api_base + '/pet/findByStatus'
+#rp = httpx.get(ep, data=payload)  # 
+url = 'https://petstore.swagger.io/v2/pet/findByStatus?status=available'
+header = {'accept: application/json'}
+rp = httpx.get(url)  # 
+#rp = httpx.get(url, headers=header)  # 
+
+
+
 
