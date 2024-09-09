@@ -37,7 +37,7 @@ AttributeError: 'function' object has no attribute 'flag'
 
 def double(fun):
     def inner(arg):
-        return 2 * arg
+        return 2 * fun(arg)
     return inner
 
 @double
@@ -132,7 +132,7 @@ def fact3(n):
 
 # ##########################################
 # Closures
-#
+
 """
 A closure is a function defined inside a function, together with the variables
 of the enclosing function.
@@ -166,7 +166,7 @@ the value is 3
 def multiply_by(n):
     def outer(fun):
         def inner(arg):
-            return n * arg
+            return n * fun(arg)
         return inner
     return outer
 
