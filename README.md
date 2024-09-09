@@ -1,6 +1,7 @@
-# osdupy readme
+# readme
 
-There is low-hanging fruit and we are going to pluck it.
+A tool for quickly creating high quality API clients.  Initial target APIs are
+those defined in Swagger/OpenAPI.
 
 First step is to read swagger / OpenAPI files.
 These files are in json/yaml.
@@ -8,8 +9,11 @@ We shall take the things we find there and represent them as data.
 DONE
 
 Next step is to validate data against the swagger.  The tricky part is getting
-references.  Worthwhile because it keeps us in the original data format.  No
-DAO (data access objects).
+references.  Worthwhile because it keeps us in the original data format.
+DONE
+
+Call the API.
+WIP
 
 Other tasks present themselves as we go.  Navigating json data is tedious
 without good tools so we create the tools as we go.
@@ -18,7 +22,7 @@ Yes, I know there are tools out there already.  But I want GOOD tools.
 
 # How to do it?
 
-We follow some straightforward principles that I've learned by studying ...
+We follow principles that I've learned by studying ...
 
 - the Unix Philosophy
 - the Agile Manifesto
@@ -188,5 +192,19 @@ You miss out on a lot.
 # Glossary
 
 - DAO: data in object drag
+- WIP: work in progress
+
+# FAQ
+
+- Why not use DAOs?
+
+Because DAOs are
+
+- tedious to write
+- error prone
+- not the original data
+- undocumented
+
+
 
 
