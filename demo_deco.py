@@ -157,6 +157,14 @@ the value is 2
 the value is 1
 >>> c1()
 the value is 3
+
+Most of the decorators above are closures.
+
+One good way to think of it is....
+
+An object is data with associated function(s).
+A closure is a function with associated data.
+
 """
 
 
