@@ -5,10 +5,12 @@ from functools import singledispatch  # for heterogeneous recursive data structu
 import jsonref
 import jsonschema
 from jsonschema import validate
+import httpx  # giving it a try
 
 
 pet_swagger = 'https://petstore.swagger.io/v2/swagger.json'
 pet_swagger_local = '~/local/petstore/swagger.json'
+petstore_api_base = 'https://petstore.swagger.io/v2'
 
 
 def raw_swagger(at_path):
@@ -129,37 +131,51 @@ def test_all():
 #test_all()
 # TODO: test the recursion by finding all dict items with key == '4xx'
 #   esp 415
+# TODO: dict => namespace
+# TODO: dict => namespace
+# TODO: dict => namespace
+# TODO: dict => namespace
 
 
 # Call an http(s) API #
 # ######################################################################## #
 
-from pprint import pprint
-import httpx  # giving it a try
 
-if 0:
-    r = httpx.get('https://www.example.org/')
-    r.status_code
-    r.headers['content-type']
-    r.text
-    ok = httpx.post('https://httpbin.org/post', data=payload)  # ok
+def fok():
+  try:
+    with httpx.Client(base_url=petstore_api_base) as client:
+        ep = '/pet/findByStatus'
+        params = {'status': 'available'}
+        r = client.get(ep, params=params)
+        assert r.status_code == 200
+        foo = r.json()
+        # OK.  There is a successful GET request.
 
-petstore_api_base = 'https://petstore.swagger.io/v2/'
-petstore_api_base = 'https://petstore.swagger.io/v2'
-api_key = 'special-key'
-endpoint = '/pet'
-verb = 'POST'
-payload = {"name": 'kittyX', 'photoUrls': [], 'category': {}, 'status': 'sold'}
-payload = {"name": 'kittyX', 'photoUrls': ['fu', 'b'], 'category': {}, 'status': 'sold'}
+        ep = '/pet'
+        params = {"name": 'kittyX', 'photoUrls': [], 'category': {}, 'status': 'sold'}
+        header = {'Content-Type': 'application/json'}
+        r2 = client.post(ep, data=json.dumps(params), headers=header)
+        assert r2.status_code == 200
+        assert r2.reason_phrase == 'OK'
+        # OK.  There is a successful POST request.
 
-#rp = httpx.post(petstore_api_base+endpoint, data=payload)  # 415
-ep = petstore_api_base + '/pet/findByStatus'
-#rp = httpx.get(ep, data=payload)  # 
-url = 'https://petstore.swagger.io/v2/pet/findByStatus?status=available'
-header = {'accept: application/json'}
-rp = httpx.get(url)  # 
-#rp = httpx.get(url, headers=header)  # 
-
-
-
+        ep = '/user'
+        user_data = {
+          "id": 0,
+          "username": "string",
+          "firstName": "string",
+          "lastName": "string",
+          "email": "string",
+          "password": "string",
+          "phone": "string",
+          "userStatus": 0
+        }
+        headers = {'Content-Type': 'application/json'}
+        r3 = client.post(ep, data=json.dumps(user_data), headers=headers)
+        assert r3.status_code == 200
+        assert r3.reason_phrase == 'OK'
+        # OK.  another successful POST request.
+ 
+  finally:
+    globals().update(locals())
 
