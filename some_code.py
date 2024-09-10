@@ -1,11 +1,13 @@
 import json
 import os
 from functools import singledispatch  # for heterogeneous recursive data structure
+from types import SimpleNamespace
+
 
 import jsonref
 import jsonschema
 from jsonschema import validate
-import httpx  # giving it a try
+import httpx
 
 
 pet_swagger = 'https://petstore.swagger.io/v2/swagger.json'
@@ -131,17 +133,52 @@ def test_all():
 #test_all()
 # TODO: test the recursion by finding all dict items with key == '4xx'
 #   esp 415
-# TODO: dict => namespace
-# TODO: dict => namespace
-# TODO: dict => namespace
-# TODO: dict => namespace
+# TODO: find some complexity metrics
+# LOC and McCabe are both good.
+# I'd like a version of McCabe that accounts for 3rd party libs.
+# or something like that.
+
+
+def namespacify(thing):
+    ugly_hack = json.dumps(thing, indent=1)
+#    ugly_hack = json.dumps(thing)   # when ugly_hack is no longer needed we
+#    will use this line instead.
+    return json.loads(ugly_hack, object_hook=lambda d: SimpleNamespace(**d))
+    # ugly_hack:    indent=1
+    # ugly_hack is required, and works because ...
+    # By the way, this specific problem (with json.dumps) can be bypassed by passing any of the "special" parameters dumps accepts (e.g indent, ensure_ascii, ...) because they prevent dumps from using the JSON encoder implemented in C (which doesn't support dict subclasses such as rpyc.core.netref.builtins.dict). Instead it falls back to the JSONEncoder class in Python, which handles dict subclasses.
+    # https://github.com/tomerfiliba-org/rpyc/issues/393
+
+
+def test_namespace():    # dict => namespace
+  try:
+    rs = raw_swagger(pet_swagger_local)
+    ns0 = namespacify(rs)
+
+    with_refs = jsonref.loads(json.dumps(rs))
+    ns = namespacify(with_refs)     # ugly_hack required for this 
+
+    assert ns0.definitions.Pet.properties.category == namespacify(rs['definitions']['Pet']['properties']['category'])
+
+    assert ns.definitions.Pet.properties.category == namespacify(with_refs['definitions']['Pet']['properties']['category'])
+    assert ns.definitions.Pet.properties.category == namespacify(deep_key('definitions Pet properties category', with_refs))
+
+    # convert namespace back to dict.
+    v0 = vars(ns)  # ok but not recursive
+
+    # recursively convert namespace back to dict.
+    v = json.loads(json.dumps(ns, default=lambda s: vars(s)))
+
+  finally:
+    globals().update(locals())
+
 
 
 # Call an http(s) API #
 # ######################################################################## #
 
 
-def fok():
+def petstore_calls():
   try:
     with httpx.Client(base_url=petstore_api_base) as client:
         ep = '/pet/findByStatus'
@@ -178,4 +215,13 @@ def fok():
  
   finally:
     globals().update(locals())
+
+
+# bring it all together
+# ######################################################################## #
+# I believe that is all the big pieces.
+#
+
+
+
 
