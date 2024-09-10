@@ -41,6 +41,7 @@ def validate_jsonschema_with_refs():
     good_schema = with_refs['definitions']['Pet']  # The behavior we want
     bad_schemas = [{}, dict(foo=2)]   # jsonschema allows any dict to be a schema.
 
+    vd = lambda ob: validate(instance=ob, schema=good_schema)
     for ob in good_ones:
         validate(instance=ob, schema=good_schema)
         print('ok good', ob)
@@ -102,7 +103,11 @@ def _(keys: str, dct):
 # ######################################################################## #
     
 
+# fooeey.
+# Should be using the version without refs.
+# That way I will know when I'm getting reuse.
 def use_it():
+
   try:
     pe = deep_key('paths /pet', with_refs)
     pns = namespacify(pe)
@@ -119,8 +124,10 @@ def use_it():
     globals().update(locals())
 
 
-    for ep in with_refs['paths']:
-        path_info = deep_key('paths '+ep, with_refs)
+    jdoc = rs
+    jdoc = with_refs
+    for ep in jdoc['paths']:
+        path_info = deep_key('paths '+ep, jdoc)
         path_ns = namespacify(path_info)
         print(ep)
         for verb in path_info:
@@ -135,26 +142,89 @@ def use_it():
                 if has_schema:
                     s = param['schema']
                     nss = namespacify(s)
-                else:
-                    foo = param
-                if has_schema:
                     assert param["in"] == 'body'
                     msg = ''
                 else:
-                    msg = param["in"]
+                    foo = param
+                    msg = '-'*22 + ' ' + param["in"]
                 print(f'    {param["name"]}  {msg}')
                 if has_schema:
                     if 'properties' in s:
-                        for prop in s['properties']:
-                            print(f'      {prop}')
+                        props = s['properties']
                     else:
-                        sa = s
                         assert s['type'] == 'array'
-                        print(f'      ' + 'x'*44)
+                        props = s['items']['properties']
+                        print(f'      -------array of----')
+                        sap = s
+                    for prop in props:
+                        print(f'      {prop}')
 
   finally:
     globals().update(locals())
 
+
+def use_it2():
+  try:
+    """Mucking around in the swagger to make sense of it.
+    """
+    validators = {}
+    rs = raw_swagger(pet_swagger_local)
+    with_refs = jsonref.loads(json.dumps(rs))
+    jdoc = with_refs
+    jdoc = rs
+    for ep in jdoc['paths']:
+        path_info = deep_key('paths '+ep, jdoc)
+        path_ns = namespacify(path_info)
+        print(ep)
+        for verb in path_info:
+            verb_info = path_info[verb]
+            verb_ns = namespacify(verb_info)
+            params = verb_info['parameters']
+#            print(f'  {verb}', len(params), type(params))
+            print(f'  {verb}')
+            for param in params:
+                pns = namespacify(param)
+                has_schema = 'schema' in param
+                if has_schema:
+                    s = param['schema']
+                    nss = namespacify(s)
+                    assert param["in"] == 'body'
+                    msg = ''
+                else:
+                    foo = param
+                    msg = '-'*22 + ' ' + param["in"]
+                print(f'    {param["name"]}  {msg}')
+                if has_schema:
+                    msg = f'--schema--   {s}'
+                    try:
+                        defn = s['$ref']
+                    except KeyError:
+                        defn = s['items']['$ref']
+                    defn = defn.split('/')[-1]
+                    sc2 = jdoc['definitions'][defn]
+                    # OK.
+                    # Here we have extracted the correct schema.
+                    # Now validate data using the schema.
+                    # So return a validator or whatever.
+                    vfun = lambda ob: validate(instance=ob, schema=sc2)
+                    vfun.name = defn
+                    validators[defn] = vfun
+                    # OK.
+                    # Here are a bunch of validators. !!!!!!!!!!!!
+                    # Slick
+                else:
+                    msg = f'--param--   {param}'
+                    xx = param
+                    if 'required' in param:
+                        param.pop('required')
+                    vfun = lambda ob: validate(instance=ob, schema=param)
+                    vfun.name = param['name']
+                    validators[param['name']] = vfun
+                print(f'    {msg}')
+                print()
+ 
+  finally:
+    globals().update(locals())
 
 
 def test_deep_key():
