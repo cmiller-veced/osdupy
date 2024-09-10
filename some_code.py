@@ -102,9 +102,67 @@ def _(keys: str, dct):
 # ######################################################################## #
     
 
+def use_it():
+  try:
+    pe = deep_key('paths /pet', with_refs)
+    pns = namespacify(pe)
+    assert len(pns.post.parameters) == 1
+    [pram] = pns.post.parameters
+    wtf = """
+    >>> pram.in
+      File "<stdin>", line 1
+        pram.in
+             ^
+    SyntaxError: invalid syntax
+    """      # what's the problem?
+    ps = pram.schema
+    globals().update(locals())
+
+
+    for ep in with_refs['paths']:
+        path_info = deep_key('paths '+ep, with_refs)
+        path_ns = namespacify(path_info)
+        print(ep)
+        for verb in path_info:
+            verb_info = path_info[verb]
+            verb_ns = namespacify(verb_info)
+            params = verb_info['parameters']
+#            print(f'  {verb}', len(params), type(params))
+            print(f'  {verb}')
+            for param in params:
+                pns = namespacify(param)
+                has_schema = 'schema' in param
+                if has_schema:
+                    s = param['schema']
+                    nss = namespacify(s)
+                else:
+                    foo = param
+                if has_schema:
+                    assert param["in"] == 'body'
+                    msg = ''
+                else:
+                    msg = param["in"]
+                print(f'    {param["name"]}  {msg}')
+                if has_schema:
+                    if 'properties' in s:
+                        for prop in s['properties']:
+                            print(f'      {prop}')
+                    else:
+                        sa = s
+                        assert s['type'] == 'array'
+                        print(f'      ' + 'x'*44)
+
+  finally:
+    globals().update(locals())
+
+
+
 def test_deep_key():
     rs = raw_swagger(pet_swagger_local)
     assert deep_key('definitions Category', rs) == rs['definitions']['Category']
+    assert deep_key(['definitions', 'Category'], rs) == rs['definitions']['Category']
+
+
 
 
 def test_recursion():
@@ -221,7 +279,4 @@ def petstore_calls():
 # ######################################################################## #
 # I believe that is all the big pieces.
 #
-
-
-
 
