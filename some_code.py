@@ -1,102 +1,13 @@
 import json
-import os
-from functools import singledispatch  # for heterogeneous recursive data structure
-from types import SimpleNamespace
-
 
 import jsonref
 import jsonschema
 from jsonschema import validate
 import httpx
+import pytest
 
+from tools import (raw_swagger, pet_swagger_local, )
 
-pet_swagger = 'https://petstore.swagger.io/v2/swagger.json'
-pet_swagger_local = '~/local/petstore/swagger.json'
-petstore_api_base = 'https://petstore.swagger.io/v2'
-
-
-def raw_swagger(at_path):
-    with open(os.path.expanduser(at_path)) as fh:
-        return json.load(fh)
-
-
-# Validation using jsonschema #
-# ######################################################################## #
-
-def validate_jsonschema_with_refs():
-    good_ones = [
-        {"name": 'kittyX', 'photoUrls': []},
-        {"name": 'kittyX', 'photoUrls': [], 'category': {}},
-        {"name": 'kittyX', 'photoUrls': [], 'status': 'sold'},
-        {"name": 'kittyX', 'photoUrls': [], 'category': {}, 'status': 'sold'},
-    ]
-    bad_ones = [
-        {},
-        {"name": 'kittyX'},
-        {"name": 'kittyX', 'photoUrls': [], 'category': ''}, 
-        {"name": 'kittyX', 'photoUrls': [], 'status': ''},
-    ]
-    rs = raw_swagger(pet_swagger_local)
-    with_refs = jsonref.loads(json.dumps(rs))
-    good_schema = with_refs['definitions']['Pet']  # The behavior we want
-    bad_schemas = [{}, dict(foo=2)]   # jsonschema allows any dict to be a schema.
-
-    vd = lambda ob: validate(instance=ob, schema=good_schema)
-    for ob in good_ones:
-        validate(instance=ob, schema=good_schema)
-        print('ok good', ob)
-
-    for ob in bad_ones:
-        try:
-            validate(instance=ob, schema=good_schema)
-        except jsonschema.exceptions.ValidationError:
-            print('ok bad', ob)
-
-    for schema in bad_schemas:
-        validate(instance={}, schema=schema)
-        print('crap!')
-
-    globals().update(locals())
-
-
-# Working with json data #
-# ######################################################################## #
-
-
-# Recursion over a heterogeneous data structure.
-@singledispatch
-def recur(arg, indent=0):
-    print(f'{" "*indent}{arg}')
-
-@recur.register
-def _(arg: list, indent=0):
-    for thing in arg:
-        recur(thing, indent=indent+1)
-
-@recur.register
-def _(arg: dict, indent=0):
-    for key in arg:
-        recur(key, indent=indent+1)
-        recur(arg[key], indent=indent+1)
-        print()
-# TODO: This is good but extremely limited.
-# It does the recursion correctly but simply prints out stuff in a totally rigid
-# way.
-
-
-# fetch from deeply nested dicts.
-# TODO: add ability to do similar with lists in the mix.
-@singledispatch
-def deep_key(keys, dct):
-    keys.reverse()
-    while keys:
-        key = keys.pop()
-        dct = dct[key]
-    return dct
-
-@deep_key.register
-def _(keys: str, dct):
-    return deep_key(keys.split(), dct)
 
 
 # Test #
@@ -107,6 +18,7 @@ def _(keys: str, dct):
 # Should be using the version without refs.
 # That way I will know when I'm getting reuse.
 def use_it():
+  # getting familiar with the swagger.
 
   try:
     pe = deep_key('paths /pet', with_refs)
@@ -220,84 +132,89 @@ def use_it2():
                     vfun = lambda ob: validate(instance=ob, schema=param)
                     vfun.name = param['name']
                     validators[param['name']] = vfun
+                    # TODO: for each endpoint, have an associated validator.
+                    # and associated validator for the return value.
                 print(f'    {msg}')
                 print()
+                # validation
+                # serialization
+                # what was the other buzzword???????
  
   finally:
     globals().update(locals())
 
 
-def test_deep_key():
-    rs = raw_swagger(pet_swagger_local)
-    assert deep_key('definitions Category', rs) == rs['definitions']['Category']
-    assert deep_key(['definitions', 'Category'], rs) == rs['definitions']['Category']
-
-
-
-
-def test_recursion():
+def get_endpoints():
   try:
+    """
+    """
+    n = 0
+    validators = {}
     rs = raw_swagger(pet_swagger_local)
-    print(len(str(rs)))
-    print(len(rs))
-    rs_keys = ['swagger', 'info', 'host', 'basePath', 'tags', 'schemes', 'paths', 'securityDefinitions', 'definitions', 'externalDocs']
-    assert sorted(list(rs.keys())) == sorted(rs_keys)
-    for key in rs_keys:
-        print(key, type(rs[key]))
-        print(rs[key])
-        print()
-    recur(rs)
-
-  finally:
-    globals().update(locals())
-
-
-def test_all():
-    test_deep_key()
-    test_recursion()
-    validate_jsonschema_with_refs()
-
-
-#test_all()
-# TODO: test the recursion by finding all dict items with key == '4xx'
-#   esp 415
-# TODO: find some complexity metrics
-# LOC and McCabe are both good.
-# I'd like a version of McCabe that accounts for 3rd party libs.
-# or something like that.
-
-
-def namespacify(thing):
-    ugly_hack = json.dumps(thing, indent=1)
-#    ugly_hack = json.dumps(thing)   # when ugly_hack is no longer needed we
-#    will use this line instead.
-    return json.loads(ugly_hack, object_hook=lambda d: SimpleNamespace(**d))
-    # ugly_hack:    indent=1
-    # ugly_hack is required, and works because ...
-    # By the way, this specific problem (with json.dumps) can be bypassed by passing any of the "special" parameters dumps accepts (e.g indent, ensure_ascii, ...) because they prevent dumps from using the JSON encoder implemented in C (which doesn't support dict subclasses such as rpyc.core.netref.builtins.dict). Instead it falls back to the JSONEncoder class in Python, which handles dict subclasses.
-    # https://github.com/tomerfiliba-org/rpyc/issues/393
-
-
-def test_namespace():    # dict => namespace
-  try:
-    rs = raw_swagger(pet_swagger_local)
-    ns0 = namespacify(rs)
-
     with_refs = jsonref.loads(json.dumps(rs))
-    ns = namespacify(with_refs)     # ugly_hack required for this 
-
-    assert ns0.definitions.Pet.properties.category == namespacify(rs['definitions']['Pet']['properties']['category'])
-
-    assert ns.definitions.Pet.properties.category == namespacify(with_refs['definitions']['Pet']['properties']['category'])
-    assert ns.definitions.Pet.properties.category == namespacify(deep_key('definitions Pet properties category', with_refs))
-
-    # convert namespace back to dict.
-    v0 = vars(ns)  # ok but not recursive
-
-    # recursively convert namespace back to dict.
-    v = json.loads(json.dumps(ns, default=lambda s: vars(s)))
-
+    paths = list(rs['paths'].keys())
+    for path in paths:
+        path_info = rs['paths'][path]
+        validators[path] = {}
+        for verb in list(path_info.keys()):
+            verb_info = path_info[verb]
+            validators[path][verb] = []
+            params = verb_info['parameters']
+            i = 0
+            for param_info in params:
+                has_schema = 'schema' in param_info
+                has_ref = has_schema and  '$ref' in param_info['schema'] or ''
+                assert has_ref in [True, False, '']
+                vinfo = [param_info['name']]
+                if has_ref:
+                    v = with_refs['paths'][path][verb]['parameters'][i]
+                    s = with_refs['paths'][path][verb]['parameters'][i]['schema']
+                    vinfo.append(s)
+                    n += 1
+#                    assert len(s) in [2, 3]
+                print(path, verb, has_schema, has_ref)
+                validators[path][verb].append(vinfo)
+                i += 1
   finally:
+    ffff = 1      # why is it at a different level?????????
+    s1 = validators['/pet']['post'][0][1]
+    s2 = validators['/pet']['put'][0][1]
+    s3 = validators['/store/order']['post'][0][1]
+#    s3['additionalProperties'] = False   # TODO: move to preprocessing step.
+
+    s4 = validators['/user']['post'][0][1]
+    s5 = validators['/user/{username}']['put'][ffff][1]
+
+    assert s4 == s5
+    assert s1 == s2
+    del s5
+    del s2
+    # Now have 3 schemas; 1,3, 4.
+#    for s in (s1, s3, s4): s['additionalProperties'] = False
+    v1 = lambda ob: validate(instance=ob, schema=s1)
+    v3 = lambda ob: validate(instance=ob, schema=s3)
+    v4 = lambda ob: validate(instance=ob, schema=s4)
+
+    good_ones = [
+        (v1, {'name': 'luna', 'photoUrls':[]}),
+        (v3, {'foo': 1}),   # because additional keys not disabled)
+        (v3, {'quantity': 1, 'status': 'placed'}),
+        (v3, {'quantity': 1}),
+        (v4, {}),
+    ]
+    bad_ones = [
+        (v1, {'name': 1, 'photoUrls':[]}),
+        (v3, {'quantity': 'x'}),
+        (v4, 'x'),
+    ]
+    for (v, arg) in good_ones:
+        v(arg)
+    for (v, arg) in bad_ones:
+        with pytest.raises(jsonschema.exceptions.ValidationError):
+            v(arg)
+
+#    [[the_name], sc] = validators['/user/{username}']['put']
+#    ll = len(sc)
     globals().update(locals())
 
 
@@ -349,4 +266,5 @@ def petstore_calls():
 # ######################################################################## #
 # I believe that is all the big pieces.
 #
+
 
