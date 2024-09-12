@@ -174,3 +174,14 @@ def test_namespace():    # dict => namespace
 1 and print('x'*33)    # interesting trick
 0 and print('y'*33)    # interesting trick
 0 or print('z'*33)    # interesting trick
+
+
+wtf_namespace = """
+>>> pram.in
+  File "<stdin>", line 1
+    pram.in
+         ^
+SyntaxError: invalid syntax
+"""      # what's the problem?
+
+

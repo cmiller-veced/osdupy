@@ -9,77 +9,15 @@ import pytest
 from tools import (raw_swagger, pet_swagger_local, )
 
 
-
 # Test #
 # ######################################################################## #
-    
-
-# fooeey.
-# Should be using the version without refs.
-# That way I will know when I'm getting reuse.
-def use_it():
-  # getting familiar with the swagger.
-
-  try:
-    pe = deep_key('paths /pet', with_refs)
-    pns = namespacify(pe)
-    assert len(pns.post.parameters) == 1
-    [pram] = pns.post.parameters
-    wtf = """
-    >>> pram.in
-      File "<stdin>", line 1
-        pram.in
-             ^
-    SyntaxError: invalid syntax
-    """      # what's the problem?
-    ps = pram.schema
-    globals().update(locals())
-
-
-    jdoc = rs
-    jdoc = with_refs
-    for ep in jdoc['paths']:
-        path_info = deep_key('paths '+ep, jdoc)
-        path_ns = namespacify(path_info)
-        print(ep)
-        for verb in path_info:
-            verb_info = path_info[verb]
-            verb_ns = namespacify(verb_info)
-            params = verb_info['parameters']
-#            print(f'  {verb}', len(params), type(params))
-            print(f'  {verb}')
-            for param in params:
-                pns = namespacify(param)
-                has_schema = 'schema' in param
-                if has_schema:
-                    s = param['schema']
-                    nss = namespacify(s)
-                    assert param["in"] == 'body'
-                    msg = ''
-                else:
-                    foo = param
-                    msg = '-'*22 + ' ' + param["in"]
-                print(f'    {param["name"]}  {msg}')
-                if has_schema:
-                    if 'properties' in s:
-                        props = s['properties']
-                    else:
-                        assert s['type'] == 'array'
-                        props = s['items']['properties']
-                        print(f'      -------array of----')
-                        sap = s
-                    for prop in props:
-                        print(f'      {prop}')
-
-  finally:
-    globals().update(locals())
 
 
 def use_it2():
   try:
     """Mucking around in the swagger to make sense of it.
     """
-    validators = {}
+    validators = {}    # bad name
     rs = raw_swagger(pet_swagger_local)
     with_refs = jsonref.loads(json.dumps(rs))
     jdoc = with_refs
@@ -139,6 +77,8 @@ def use_it2():
                 # validation
                 # serialization
                 # what was the other buzzword???????
+                # cvs
+                # conversion
  
   finally:
     globals().update(locals())
@@ -146,19 +86,17 @@ def use_it2():
 
 def get_endpoints():
   try:
-    """
-    """
     n = 0
-    validators = {}
+    schemas = {}
     rs = raw_swagger(pet_swagger_local)
     with_refs = jsonref.loads(json.dumps(rs))
     paths = list(rs['paths'].keys())
     for path in paths:
         path_info = rs['paths'][path]
-        validators[path] = {}
+        schemas[path] = {}
         for verb in list(path_info.keys()):
             verb_info = path_info[verb]
-            validators[path][verb] = []
+            schemas[path][verb] = []
             params = verb_info['parameters']
             i = 0
             for param_info in params:
@@ -173,17 +111,19 @@ def get_endpoints():
                     n += 1
 #                    assert len(s) in [2, 3]
                 print(path, verb, has_schema, has_ref)
-                validators[path][verb].append(vinfo)
+                if not has_schema:
+                    vinfo.append(param_info)
+                schemas[path][verb].append(vinfo)
                 i += 1
   finally:
     ffff = 1      # why is it at a different level?????????
-    s1 = validators['/pet']['post'][0][1]
-    s2 = validators['/pet']['put'][0][1]
-    s3 = validators['/store/order']['post'][0][1]
+    s1 = schemas['/pet']['post'][0][1]
+    s2 = schemas['/pet']['put'][0][1]
+    s3 = schemas['/store/order']['post'][0][1]
 #    s3['additionalProperties'] = False   # TODO: move to preprocessing step.
 
-    s4 = validators['/user']['post'][0][1]
-    s5 = validators['/user/{username}']['put'][ffff][1]
+    s4 = schemas['/user']['post'][0][1]
+    s5 = schemas['/user/{username}']['put'][ffff][1]
 
     assert s4 == s5
     assert s1 == s2
@@ -194,6 +134,22 @@ def get_endpoints():
     v1 = lambda ob: validate(instance=ob, schema=s1)
     v3 = lambda ob: validate(instance=ob, schema=s3)
     v4 = lambda ob: validate(instance=ob, schema=s4)
+    s3a = s3.copy()
+    s3a['additionalProperties'] = False
+    v3a = lambda ob: validate(instance=ob, schema=s3a)
+
+    # OK
+    # Above covers referred schemas.
+    # Now deal with inline schemas.
+    [the_name2, sc2] = schemas['/user/{username}']['put'][0]
+    [the_name, sc] = schemas['/pet/findByStatus']['get'][0]
+
+    sca = sc.copy()
+    vca = lambda ob: validate(instance=ob, schema=sca)
+    sc.pop('required')    # preprocessing
+    vc = lambda ob: validate(instance=ob, schema=sc)  # reads sc at RUN time.
+    vc2 = lambda ob: validate(instance=ob, schema=sc2)
+#    sc2.pop('required')    # preprocessing
 
     good_ones = [
         (v1, {'name': 'luna', 'photoUrls':[]}),
@@ -201,11 +157,19 @@ def get_endpoints():
         (v3, {'quantity': 1, 'status': 'placed'}),
         (v3, {'quantity': 1}),
         (v4, {}),
+        (vc, ['pending']),
+        (vc, []),
+        (vc2, 'foobar'),
     ]
     bad_ones = [
         (v1, {'name': 1, 'photoUrls':[]}),
         (v3, {'quantity': 'x'}),
         (v4, 'x'),
+        (v3a, {'foo': 1}),   # additional keys disabled
+        (vc, {}),
+        (vc, 'pending'),
+        (vc, ['x']),
+        (vc2, []),
     ]
     for (v, arg) in good_ones:
         v(arg)
@@ -213,10 +177,11 @@ def get_endpoints():
         with pytest.raises(jsonschema.exceptions.ValidationError):
             v(arg)
 
-#    [[the_name], sc] = validators['/user/{username}']['put']
+
+
+#    [[the_name], sc] = schemas['/user/{username}']['put']
 #    ll = len(sc)
     globals().update(locals())
-
 
 
 # Call an http(s) API #
@@ -260,11 +225,4 @@ def petstore_calls():
  
   finally:
     globals().update(locals())
-
-
-# bring it all together
-# ######################################################################## #
-# I believe that is all the big pieces.
-#
-
 
