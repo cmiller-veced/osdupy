@@ -1,4 +1,5 @@
 import json
+from pprint import pprint
 
 import jsonref
 import jsonschema
@@ -9,82 +10,9 @@ import pytest
 from tools import (raw_swagger, pet_swagger_local, )
 
 
-# Test #
-# ######################################################################## #
 
 
-def use_it2():
-  try:
-    """Mucking around in the swagger to make sense of it.
-    """
-    validators = {}    # bad name
-    rs = raw_swagger(pet_swagger_local)
-    with_refs = jsonref.loads(json.dumps(rs))
-    jdoc = with_refs
-    jdoc = rs
-    for ep in jdoc['paths']:
-        path_info = deep_key('paths '+ep, jdoc)
-        path_ns = namespacify(path_info)
-        print(ep)
-        for verb in path_info:
-            verb_info = path_info[verb]
-            verb_ns = namespacify(verb_info)
-            params = verb_info['parameters']
-#            print(f'  {verb}', len(params), type(params))
-            print(f'  {verb}')
-            for param in params:
-                pns = namespacify(param)
-                has_schema = 'schema' in param
-                if has_schema:
-                    s = param['schema']
-                    nss = namespacify(s)
-                    assert param["in"] == 'body'
-                    msg = ''
-                else:
-                    foo = param
-                    msg = '-'*22 + ' ' + param["in"]
-                print(f'    {param["name"]}  {msg}')
-                if has_schema:
-                    msg = f'--schema--   {s}'
-                    try:
-                        defn = s['$ref']
-                    except KeyError:
-                        defn = s['items']['$ref']
-                    defn = defn.split('/')[-1]
-                    sc2 = jdoc['definitions'][defn]
-                    # OK.
-                    # Here we have extracted the correct schema.
-                    # Now validate data using the schema.
-                    # So return a validator or whatever.
-                    vfun = lambda ob: validate(instance=ob, schema=sc2)
-                    vfun.name = defn
-                    validators[defn] = vfun
-                    # OK.
-                    # Here are a bunch of validators. !!!!!!!!!!!!
-                    # Slick
-                else:
-                    msg = f'--param--   {param}'
-                    xx = param
-                    if 'required' in param:
-                        param.pop('required')
-                    vfun = lambda ob: validate(instance=ob, schema=param)
-                    vfun.name = param['name']
-                    validators[param['name']] = vfun
-                    # TODO: for each endpoint, have an associated validator.
-                    # and associated validator for the return value.
-                print(f'    {msg}')
-                print()
-                # validation
-                # serialization
-                # what was the other buzzword???????
-                # cvs
-                # conversion
- 
-  finally:
-    globals().update(locals())
-
-
-def get_endpoints():
+def get_endpoint_schemas():
   try:
     n = 0
     schemas = {}
@@ -115,7 +43,97 @@ def get_endpoints():
                     vinfo.append(param_info)
                 schemas[path][verb].append(vinfo)
                 i += 1
+    return schemas
   finally:
+    globals().update(locals())
+
+
+def preprocess_schemas(schemas):
+    """
+    Preprocessing can have multiple steps because of multiple problem sources.
+    - type errors by the swagger author.  eg swagger says int but should be str.
+    - things we just want to change in the schema, eg additionalProperties.
+    - shortcomings of jsonschema,  eg date formats?
+    """
+    return schemas
+
+
+def endpoint_names(swagger_doc):
+    return list(swagger_doc['paths'].keys())
+
+
+def endpoint_good_data():
+    rs = raw_swagger(pet_swagger_local)
+    d = {ep: {} for ep in endpoint_names(rs)}
+    d['/pet']['post'] = [
+        {'name': 'luna', 'photoUrls':[]},
+        {'name': 'dulci', 'photoUrls':[]},
+        #        {'name': 1, 'photoUrls':[]},  # Should fail.  Shows it's not working !
+    ]
+    return d
+    globals().update(locals())
+
+
+def test_endpoint_validators():
+  try:
+      validators = get_endpoint_validators()
+      data = endpoint_good_data()
+      for endpoint in data:
+          print(endpoint)
+          for verb in data[endpoint]:
+              print(f'  {verb}')
+              for thing in data[endpoint][verb]:
+                  print(f'    {thing}')
+                  validators[endpoint][verb](thing)
+
+  finally:
+    globals().update(locals())
+
+
+def get_endpoint_validators():
+  try:
+    schemas = get_endpoint_schemas()
+    schemas = preprocess_schemas(schemas)
+    validators = {}
+    for endpoint in schemas:
+        validators[endpoint] = {}
+        for verb in schemas[endpoint]:
+            validators[endpoint][verb] = lambda ob: validate(instance=ob, schema=schemas[endpoint][verb])
+    return validators
+  finally:
+
+    good_ones = [
+        (v1, {'name': 'luna', 'photoUrls':[]}),
+        (v3, {'foo': 1}),   # because additional keys not disabled)
+        (v3, {'quantity': 1, 'status': 'placed'}),
+        (v3, {'quantity': 1}),
+        (v4, {}),
+        (vc, ['pending']),
+        (vc, []),
+        (vc2, 'foobar'),
+    ]
+    bad_ones = [
+        (v1, {'name': 1, 'photoUrls':[]}),
+        (v3, {'quantity': 'x'}),
+        (v4, 'x'),
+        (v3a, {'foo': 1}),   # additional keys disabled
+        (vc, {}),
+        (vc, 'pending'),
+        (vc, ['x']),
+        (vc2, []),
+    ]
+    for (v, arg) in good_ones:
+        v(arg)
+    for (v, arg) in bad_ones:
+        with pytest.raises(jsonschema.exceptions.ValidationError):
+            v(arg)
+
+    globals().update(locals())
+
+
+def test_endpoint_schemas():
+  try:
+    schemas = get_endpoint_schemas()
     ffff = 1      # why is it at a different level?????????
     s1 = schemas['/pet']['post'][0][1]
     s2 = schemas['/pet']['put'][0][1]
@@ -149,38 +167,9 @@ def get_endpoints():
     sc.pop('required')    # preprocessing
     vc = lambda ob: validate(instance=ob, schema=sc)  # reads sc at RUN time.
     vc2 = lambda ob: validate(instance=ob, schema=sc2)
-#    sc2.pop('required')    # preprocessing
+    sc2.pop('required')    # preprocessing
 
-    good_ones = [
-        (v1, {'name': 'luna', 'photoUrls':[]}),
-        (v3, {'foo': 1}),   # because additional keys not disabled)
-        (v3, {'quantity': 1, 'status': 'placed'}),
-        (v3, {'quantity': 1}),
-        (v4, {}),
-        (vc, ['pending']),
-        (vc, []),
-        (vc2, 'foobar'),
-    ]
-    bad_ones = [
-        (v1, {'name': 1, 'photoUrls':[]}),
-        (v3, {'quantity': 'x'}),
-        (v4, 'x'),
-        (v3a, {'foo': 1}),   # additional keys disabled
-        (vc, {}),
-        (vc, 'pending'),
-        (vc, ['x']),
-        (vc2, []),
-    ]
-    for (v, arg) in good_ones:
-        v(arg)
-    for (v, arg) in bad_ones:
-        with pytest.raises(jsonschema.exceptions.ValidationError):
-            v(arg)
-
-
-
-#    [[the_name], sc] = schemas['/user/{username}']['put']
-#    ll = len(sc)
+  finally:
     globals().update(locals())
 
 
@@ -225,4 +214,15 @@ def petstore_calls():
  
   finally:
     globals().update(locals())
+
+
+# validation
+# serialization
+# what was the other buzzword???????
+# cvs
+# conversion
+
+# Test #
+# ######################################################################## #
+
 
