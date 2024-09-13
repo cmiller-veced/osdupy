@@ -8,8 +8,9 @@ from jsonschema import validate
 import httpx
 import pytest
 
-from tools import (raw_swagger, pet_swagger_local, )
-
+from tools import (raw_swagger, pet_swagger_local,
+    petstore_api_base,
+ )
 
 def get_endpoint_schemas():
     n = 0
@@ -197,6 +198,8 @@ def petstore_calls():
           "phone": "string",
           "userStatus": 0
         }
+        validate = validator_for(ep, 'post')
+        validate(user_data)
         headers = {'Content-Type': 'application/json'}
         r3 = client.post(ep, data=json.dumps(user_data), headers=headers)
         assert r3.status_code == 200
@@ -204,8 +207,7 @@ def petstore_calls():
         # OK.  another successful POST request.
  
   finally:
-    pass
-#    globals().update(locals())
+    globals().update(locals())
 
 
 # validation
