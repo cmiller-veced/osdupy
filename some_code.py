@@ -88,7 +88,13 @@ def petstore_calls():
   try:
     with httpx.Client(base_url=petstore_api_base) as client:
         ep = '/pet/findByStatus'
-        params = {'status': 'available'}
+
+        params = {'status': 'available'}  # good result but fails validation
+        validate = validator_for(ep, 'get')
+#        params = ['available']  # passes validation but returns []
+#        validate(params)
+#        a job for preprocessing ?
+
         r = client.get(ep, params=params)
         assert r.status_code == 200
         foo = r.json()
@@ -97,6 +103,8 @@ def petstore_calls():
         ep = '/pet'
         params = {"name": 'kittyX', 'photoUrls': [], 'category': {}, 'status': 'sold'}
         header = {'Content-Type': 'application/json'}
+        validate = validator_for(ep, 'post')
+        validate(params)
         r2 = client.post(ep, data=json.dumps(params), headers=header)
         assert r2.status_code == 200
         assert r2.reason_phrase == 'OK'
@@ -119,7 +127,7 @@ def petstore_calls():
         r3 = client.post(ep, data=json.dumps(user_data), headers=headers)
         assert r3.status_code == 200
         assert r3.reason_phrase == 'OK'
-        # OK.  another successful POST request.
+        # OK.  Another successful POST request.
  
   finally:
     globals().update(locals())
