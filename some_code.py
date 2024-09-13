@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from pprint import pprint
 
 import jsonref
@@ -60,9 +61,9 @@ def preprocess_schemas(schemas):
     - type errors by the swagger author.  eg swagger says int but should be str.
     - things we just want to change in the schema, eg additionalProperties.
     - shortcomings of jsonschema,  eg date formats?
+    s3['additionalProperties'] = False   # TODO: move to preprocessing step.
     """
     return schemas
-#    s3['additionalProperties'] = False   # TODO: move to preprocessing step.
 
 
 def endpoint_names(swagger_doc):
@@ -70,51 +71,61 @@ def endpoint_names(swagger_doc):
 
 
 def endpoint_good_data():
-    d = {}
-    d['/pet'] = {}
+    d = defaultdict(lambda:{})
     d['/pet']['post'] = [
         {'name': 'luna', 'photoUrls':[]},
         {'name': 'dulci', 'photoUrls':[]},
     ]
-    d['/store/order'] = {}
+    d['/pet/findByStatus']['get'] = [
+        ['available'],
+        ['available', 'pending'],
+        [],
+    ]
+    d['/pet/findByTags']['get'] = [
+        ['foo'],
+        ['foo', 'bar'],
+        [],
+    ]
+    d['/pet/{petId}']['get'] = [
+        99,
+    ]
     d['/store/order']['post'] = [
         {'foo': 1},   # because additional keys not disabled)
         {'quantity': 1, 'status': 'placed'},
         {'quantity': 1},
     ]
-    d['/user'] = {}
     d['/user']['post'] = [
         {},
+        {'username': 'foo'},
     ]
-
     return d
-    good_ones = [
-        (vc, ['pending']),
-        (vc, []),
-        (vc2, 'foobar'),
-    ]
+
  
 def endpoint_bad_data():
-    d = {}
-    d['/pet'] = {}
+    d = defaultdict(lambda:{})
     d['/pet']['post'] = [
         {'name': 11, 'photoUrls':[]},
         {'name': 1, 'photoUrls':[]},  # Should fail.  Shows it's not working !
     ]
-    d['/store/order'] = {}
+    d['/pet/findByStatus']['get'] = [
+        ['x'],
+    ]
+    d['/pet/findByTags']['get'] = [
+        [{}],
+        {},
+    ]
+    d['/pet/{petId}']['get'] = [
+        9.9,
+        '9',
+        {}
+    ]
     d['/store/order']['post'] = [
         {'quantity': 'x'},
     ]
- 
-    return d
-    bad_ones = [
-        (v4, 'x'),
-        (v3a, {'foo': 1}),   # additional keys disabled
-        (vc, {}),
-        (vc, 'pending'),
-        (vc, ['x']),
-        (vc2, []),
+    d['/user']['post'] = [
+        {'username': 9},
     ]
+    return d
  
 
 def test_endpoint_validators():
@@ -148,11 +159,13 @@ def test_endpoint_validators():
 
 def validator_for(endpoint, verb):
     schema = get_endpoint_schemas()[endpoint][verb]
-    return lambda ob: validate(ob, schema=schema)
-
-
-def test_endpoint_schemas():
-    schemas = get_endpoint_schemas()
+    if 'required' in schema and schema['required'] is True:  # preprocessing
+        del schema['required'] 
+    fun = lambda ob: validate(ob, schema=schema)
+    fun.endpoint = endpoint
+    fun.verb = verb
+    fun.schema = schema
+    return fun
 
 
 # Call an http(s) API #
@@ -207,5 +220,8 @@ def petstore_calls():
 
 # Test #
 # ######################################################################## #
+
+def test_endpoint_schemas():
+    schemas = get_endpoint_schemas()
 
 
