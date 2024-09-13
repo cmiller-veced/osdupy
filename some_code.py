@@ -105,7 +105,7 @@ def endpoint_bad_data():
     d = defaultdict(lambda:{})
     d['/pet']['post'] = [
         {'name': 11, 'photoUrls':[]},
-        {'name': 1, 'photoUrls':[]},  # Should fail.  Shows it's not working !
+        {'name': 1, 'photoUrls':[]},
     ]
     d['/pet/findByStatus']['get'] = [
         ['x'],
@@ -130,29 +130,25 @@ def endpoint_bad_data():
 
 def test_endpoint_validators():
   try:
-    print('-'*55 + ' good data')
-    data = endpoint_good_data()
-    for endpoint in data:
-        print(endpoint)
-        for verb in data[endpoint]:
-            print(f'  {verb}')
-            v = validator_for(endpoint, verb)
-            for thing in data[endpoint][verb]:
-                v(thing)
-                print(f'    {thing}   ok')
-
-    print()
-    print('-'*55 + ' bad data')
-    data = endpoint_bad_data()
-    for endpoint in data:
-        print(endpoint)
-        for verb in data[endpoint]:
-            print(f'  {verb}')
-            v = validator_for(endpoint, verb)
-            for thing in data[endpoint][verb]:
-                with pytest.raises(jsonschema.exceptions.ValidationError):
-                    v(thing)
-                print(f'    {thing}   ok')
+    datas = [
+        (True, endpoint_good_data()),
+        (False, endpoint_bad_data())
+    ]
+    for (is_good_data, data) in datas:
+        print('-'*55, is_good_data)
+        for endpoint in data:
+            print(endpoint)
+            for verb in data[endpoint]:
+                print(f'  {verb}')
+                v = validator_for(endpoint, verb)
+                for thing in data[endpoint][verb]:
+                    if is_good_data:
+                        v(thing)
+                        print(f'    {thing}   ok')
+                    else:
+                        with pytest.raises(jsonschema.exceptions.ValidationError):
+                            v(thing)
+                        print(f'    {thing}   ok')
   finally:
     globals().update(locals())
 
