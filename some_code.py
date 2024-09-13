@@ -10,10 +10,7 @@ import pytest
 from tools import (raw_swagger, pet_swagger_local, )
 
 
-
-
 def get_endpoint_schemas():
-  try:
     n = 0
     schemas = {}
     rs = raw_swagger(pet_swagger_local)
@@ -38,14 +35,23 @@ def get_endpoint_schemas():
                     vinfo.append(s)
                     n += 1
 #                    assert len(s) in [2, 3]
-                print(path, verb, has_schema, has_ref)
+#                print(path, verb, has_schema, has_ref)
                 if not has_schema:
                     vinfo.append(param_info)
                 schemas[path][verb].append(vinfo)
                 i += 1
+    for endpoint in schemas:
+        for verb in schemas[endpoint]:
+            schema = schemas[endpoint][verb]
+            try:
+                schema = schema[0][1] if schema else None
+            except IndexError:
+                schema = None
+            if schema is not None:
+                schema = dict(schema)
+                assert type(schema) is dict
+            schemas[endpoint][verb] = schema
     return schemas
-  finally:
-    globals().update(locals())
 
 
 def preprocess_schemas(schemas):
@@ -56,6 +62,7 @@ def preprocess_schemas(schemas):
     - shortcomings of jsonschema,  eg date formats?
     """
     return schemas
+#    s3['additionalProperties'] = False   # TODO: move to preprocessing step.
 
 
 def endpoint_names(swagger_doc):
@@ -63,58 +70,44 @@ def endpoint_names(swagger_doc):
 
 
 def endpoint_good_data():
-    rs = raw_swagger(pet_swagger_local)
-    d = {ep: {} for ep in endpoint_names(rs)}
+    d = {}
+    d['/pet'] = {}
     d['/pet']['post'] = [
         {'name': 'luna', 'photoUrls':[]},
         {'name': 'dulci', 'photoUrls':[]},
-        #        {'name': 1, 'photoUrls':[]},  # Should fail.  Shows it's not working !
     ]
+    d['/store/order'] = {}
+    d['/store/order']['post'] = [
+        {'foo': 1},   # because additional keys not disabled)
+        {'quantity': 1, 'status': 'placed'},
+        {'quantity': 1},
+    ]
+    d['/user'] = {}
+    d['/user']['post'] = [
+        {},
+    ]
+
     return d
-    globals().update(locals())
-
-
-def test_endpoint_validators():
-  try:
-      validators = get_endpoint_validators()
-      data = endpoint_good_data()
-      for endpoint in data:
-          print(endpoint)
-          for verb in data[endpoint]:
-              print(f'  {verb}')
-              for thing in data[endpoint][verb]:
-                  print(f'    {thing}')
-                  validators[endpoint][verb](thing)
-
-  finally:
-    globals().update(locals())
-
-
-def get_endpoint_validators():
-  try:
-    schemas = get_endpoint_schemas()
-    schemas = preprocess_schemas(schemas)
-    validators = {}
-    for endpoint in schemas:
-        validators[endpoint] = {}
-        for verb in schemas[endpoint]:
-            validators[endpoint][verb] = lambda ob: validate(instance=ob, schema=schemas[endpoint][verb])
-    return validators
-  finally:
-
     good_ones = [
-        (v1, {'name': 'luna', 'photoUrls':[]}),
-        (v3, {'foo': 1}),   # because additional keys not disabled)
-        (v3, {'quantity': 1, 'status': 'placed'}),
-        (v3, {'quantity': 1}),
-        (v4, {}),
         (vc, ['pending']),
         (vc, []),
         (vc2, 'foobar'),
     ]
+ 
+def endpoint_bad_data():
+    d = {}
+    d['/pet'] = {}
+    d['/pet']['post'] = [
+        {'name': 11, 'photoUrls':[]},
+        {'name': 1, 'photoUrls':[]},  # Should fail.  Shows it's not working !
+    ]
+    d['/store/order'] = {}
+    d['/store/order']['post'] = [
+        {'quantity': 'x'},
+    ]
+ 
+    return d
     bad_ones = [
-        (v1, {'name': 1, 'photoUrls':[]}),
-        (v3, {'quantity': 'x'}),
         (v4, 'x'),
         (v3a, {'foo': 1}),   # additional keys disabled
         (vc, {}),
@@ -122,55 +115,44 @@ def get_endpoint_validators():
         (vc, ['x']),
         (vc2, []),
     ]
-    for (v, arg) in good_ones:
-        v(arg)
-    for (v, arg) in bad_ones:
-        with pytest.raises(jsonschema.exceptions.ValidationError):
-            v(arg)
+ 
 
+def test_endpoint_validators():
+  try:
+    print('-'*55 + ' good data')
+    data = endpoint_good_data()
+    for endpoint in data:
+        print(endpoint)
+        for verb in data[endpoint]:
+            print(f'  {verb}')
+            v = validator_for(endpoint, verb)
+            for thing in data[endpoint][verb]:
+                v(thing)
+                print(f'    {thing}   ok')
+
+    print()
+    print('-'*55 + ' bad data')
+    data = endpoint_bad_data()
+    for endpoint in data:
+        print(endpoint)
+        for verb in data[endpoint]:
+            print(f'  {verb}')
+            v = validator_for(endpoint, verb)
+            for thing in data[endpoint][verb]:
+                with pytest.raises(jsonschema.exceptions.ValidationError):
+                    v(thing)
+                print(f'    {thing}   ok')
+  finally:
     globals().update(locals())
+
+
+def validator_for(endpoint, verb):
+    schema = get_endpoint_schemas()[endpoint][verb]
+    return lambda ob: validate(ob, schema=schema)
 
 
 def test_endpoint_schemas():
-  try:
     schemas = get_endpoint_schemas()
-    ffff = 1      # why is it at a different level?????????
-    s1 = schemas['/pet']['post'][0][1]
-    s2 = schemas['/pet']['put'][0][1]
-    s3 = schemas['/store/order']['post'][0][1]
-#    s3['additionalProperties'] = False   # TODO: move to preprocessing step.
-
-    s4 = schemas['/user']['post'][0][1]
-    s5 = schemas['/user/{username}']['put'][ffff][1]
-
-    assert s4 == s5
-    assert s1 == s2
-    del s5
-    del s2
-    # Now have 3 schemas; 1,3, 4.
-#    for s in (s1, s3, s4): s['additionalProperties'] = False
-    v1 = lambda ob: validate(instance=ob, schema=s1)
-    v3 = lambda ob: validate(instance=ob, schema=s3)
-    v4 = lambda ob: validate(instance=ob, schema=s4)
-    s3a = s3.copy()
-    s3a['additionalProperties'] = False
-    v3a = lambda ob: validate(instance=ob, schema=s3a)
-
-    # OK
-    # Above covers referred schemas.
-    # Now deal with inline schemas.
-    [the_name2, sc2] = schemas['/user/{username}']['put'][0]
-    [the_name, sc] = schemas['/pet/findByStatus']['get'][0]
-
-    sca = sc.copy()
-    vca = lambda ob: validate(instance=ob, schema=sca)
-    sc.pop('required')    # preprocessing
-    vc = lambda ob: validate(instance=ob, schema=sc)  # reads sc at RUN time.
-    vc2 = lambda ob: validate(instance=ob, schema=sc2)
-    sc2.pop('required')    # preprocessing
-
-  finally:
-    globals().update(locals())
 
 
 # Call an http(s) API #
@@ -213,7 +195,8 @@ def petstore_calls():
         # OK.  another successful POST request.
  
   finally:
-    globals().update(locals())
+    pass
+#    globals().update(locals())
 
 
 # validation
