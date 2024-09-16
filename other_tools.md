@@ -49,19 +49,17 @@ https://openapi-core.readthedocs.io/en/latest/unmarshalling.html
 which means converting strings to python types; datetime, uuid, etc.
 ^ Handy stuff ^
 
-
 ```
 from prance import ResolvingParser
 parser = ResolvingParser(pet_swagger_full)
 parser.specification # contains fully resolved specs as a dict
 ```
 
-
-    prance.util.path is interesting.
-    Similar to my deep_fetch stuff.
-    btw, could do deep_set.
-    https://github.com/RonnyPfannschmidt/prance/blob/main/prance/util/path.py
-    Written by one guy.
+prance.util.path is interesting.
+Similar to my deep_fetch stuff.
+btw, could do deep_set.
+https://github.com/RonnyPfannschmidt/prance/blob/main/prance/util/path.py
+Written by one guy.
 
 
 These three are the competion I've located so far.  All three have good
