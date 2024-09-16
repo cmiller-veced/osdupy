@@ -90,9 +90,24 @@ understand SVG, d3js will make a lot of sense to you.
 Aframe is a javascript library around (WebGL?).
 
 
+### APIs with OpenAPI doc
+
+- https://www.weather.gov/documentation/services-web-api
+- https://api.weather.gov/openapi.json NWS   OpenAPI v 3.0
+- https://developer.osf.io  open science
+- https://apis.guru/api-doc/    List of OpenAPI services
+
+
+#### APIs w/o swagger found
+- https://open-meteo.com  weather    NO swagger file found
+- https://info.arxiv.org/help/api/user-manual.html  no swagger
+- https://newton.vercel.app   no swagger.   symbolic math
+
+
 
 ### Our tools
 
+- https://github.com/OAI/OpenAPI-Specification
 - https://swagger.io/specification/
 - https://docs.python.org/3/library/json.html
 - https://daringfireball.net/projects/markdown/
@@ -100,6 +115,9 @@ Aframe is a javascript library around (WebGL?).
 - https://json-schema.org
 - https://json-schema.org/understanding-json-schema
 - https://developer.mozilla.org/en-US/docs/Web/API/
+- https://github.com/APIs-guru/openapi-directory
+- https://github.com/public-apis/public-apis
+
 
 -----------------------------
 
