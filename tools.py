@@ -9,8 +9,9 @@ from pprint import pprint
 
 pet_swagger = 'https://petstore.swagger.io/v2/swagger.json'
 pet_swagger_local = '~/local/petstore/swagger.json'
-petstore_api_base = 'https://petstore.swagger.io/v2'
 pet_swagger_full = '/Users/cary/local/petstore/swagger.json'
+
+nws_openapi_local = '~/local/nws/openapi.json'
 
 
 
