@@ -1,5 +1,7 @@
 # readme
 
+
+
 A tool for quickly creating high quality API clients.  Initial target APIs are
 those defined in Swagger/OpenAPI.
 
@@ -224,5 +226,34 @@ Because DAOs are
 - undocumented
 
 
+#### what is the problem?
+
+Q. What is the problem with most Python code today?
+A. It is written for the convenience of the original programmer.  The ultimate
+   programmer/user is not considered.
+
+Q. So what?
+A. If it's throwaway code, then NP.  But if the code continues getting used,
+   problems accumulate.
+
+Q. How to fix?
+A. Start at the end and work backwards.  From POV of end user/programmer.
+
+
+#### Target User
+
+- intelligent
+- some programming experience / comfort
+- issue aware re the API   (possibly the swagger file but probably not).
+
+#### phone call w/ Theresa Wed Sep 18
+
+- send her email w/ date-time(s) for meeting early next week.
+- x 
+- x 
+- x 
+- x 
+
+Need two research questions and related hypotheses.
 
 
