@@ -6,12 +6,37 @@ from types import SimpleNamespace
 from pprint import pprint
 
 
-
 pet_swagger = 'https://petstore.swagger.io/v2/swagger.json'
 pet_swagger_local = '~/local/petstore/swagger.json'
 pet_swagger_full = '/Users/cary/local/petstore/swagger.json'
 
 nws_openapi_local = '~/local/nws/openapi.json'
+
+
+
+class local:       # our data.   (vs their data (in swagger))
+    class swagger:
+        pet = pet_swagger_local
+        nws = nws_openapi_local
+    class api_base:
+        pet = 'https://petstore.swagger.io/v2'
+        nws = 'https://api.weather.gov'
+
+
+
+def preprocess_schemas(schemas):
+    """
+    Preprocessing can have multiple steps because of multiple problem sources.
+    - type errors by the swagger author.  eg swagger says int but should be str.
+    - things we just want to change in the schema, eg additionalProperties.
+    - shortcomings of jsonschema,  eg date formats?
+    s3['additionalProperties'] = False   # TODO: move to preprocessing step.
+    """
+    return schemas
+
+
+def endpoint_names(swagger_doc):
+    return list(swagger_doc['paths'].keys())
 
 
 
@@ -186,3 +211,6 @@ SyntaxError: invalid syntax
 """      # what's the problem?
 
 
+# TODO: pagination
+# TODO: pagination
+# TODO: pagination

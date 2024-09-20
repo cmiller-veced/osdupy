@@ -15,19 +15,10 @@ import pandas
 
 from tools import (
     raw_swagger, 
-    pet_swagger_local, 
-    nws_openapi_local,
+    local,
     namespacify,
+    endpoint_names,
  )
-
-
-class local:       # our data.   (vs their data (in swagger))
-    class swagger:
-        pet = pet_swagger_local
-        nws = nws_openapi_local
-    class api_base:
-        pet = 'https://petstore.swagger.io/v2'
-        nws = 'https://api.weather.gov'
 
 
 # TODO: change name   NO
@@ -39,8 +30,7 @@ def validate_examples(validator, good_ones, bad_ones):    # NWS
         assert not validator.is_valid(thing)
 
 
-
-def validation_practice():    # NWS
+def validation_practice_nws():    # NWS
   try:
     components = get_component_schemas_nws()
     parameters = components['parameters']
@@ -93,43 +83,6 @@ def validation_practice():    # NWS
     globals().update(locals())
 
 
-def get_endpoint_schemas_pets():   # petstore
-  try:
-    schemas = {}
-    rs = raw_swagger(local.swagger.pet)
-    with_refs = jsonref.loads(json.dumps(rs))
-    paths = list(with_refs['paths'].keys())
-    for path in paths:
-        print(path)
-        path_info = with_refs['paths'][path]
-        schemas[path] = {}
-        for verb in list(path_info.keys()):
-            print(f'  {verb}')
-            verb_info = path_info[verb]
-            params = verb_info['parameters']
-            for param_info in params:
-                schema = param_info['schema'] if 'schema' in param_info else param_info
-                schemas[path][verb] = dict(schema)
-    return schemas
-  finally:
-    globals().update(locals())
-
-
-def preprocess_schemas(schemas):
-    """
-    Preprocessing can have multiple steps because of multiple problem sources.
-    - type errors by the swagger author.  eg swagger says int but should be str.
-    - things we just want to change in the schema, eg additionalProperties.
-    - shortcomings of jsonschema,  eg date formats?
-    s3['additionalProperties'] = False   # TODO: move to preprocessing step.
-    """
-    return schemas
-
-
-def endpoint_names(swagger_doc):
-    return list(swagger_doc['paths'].keys())
-
-
 def get_component_schemas_nws():    # NWS
   try:
     rs = raw_swagger(local.swagger.nws)
@@ -145,9 +98,113 @@ def get_component_schemas_nws():    # NWS
     globals().update(locals())
 
 
+def nws_education():
+  try:
+    rs = raw_swagger(local.swagger.nws)
+    ep_names = endpoint_names(rs)
+    with_refs = jsonref.loads(json.dumps(rs))
 
-# Call an http(s) API #
-# ######################################################################## #
+    stationId = 'KRCM'    # OK
+    stationId = 'CO100'   # OK
+    learning_about_parameters = True
+    learning_about_parameters = False
+    if learning_about_parameters:
+        # Learning about the parameters
+        ep = '/stations/{stationId}/observations'
+
+        info = rs['paths'][ep]
+        assert len(info) in [1, 2]
+        info = rs['paths'][ep]['get']
+
+        pinfo = rs['paths'][ep]['get']['parameters']
+        xinfo = with_refs['paths'][ep]['get']['parameters']
+#            ainfo = xinfo[4]
+#            einfo = xinfo[2]
+        for param in xinfo:   # list
+            binfo = param
+            pname = binfo['name']
+            assert binfo['in'] == 'query'
+            if 'style' in binfo:
+                assert binfo['style'] == 'form'
+                # `point` does not have style.
+                # and has inline schema.
+            if 'explode' in binfo:
+                assert binfo['explode'] in [True, False]
+            print(pname)
+        return
+  finally:
+    globals().update(locals())
+
+
+def nws_series():
+  try:
+    """ Get a series of observations suitable for putting in a pandas DF,
+    and then a jupyter notebook.
+    """
+    rs = raw_swagger(local.swagger.nws)
+    ep_names = endpoint_names(rs)
+    with_refs = jsonref.loads(json.dumps(rs))
+    ep = '/stations/{stationId}/observations'
+    
+    params = {
+        'start': '2024-09-17T18:39:00+00:00', 
+        'end':   '2024-09-18T18:39:00+00:00',
+        'limit':   '100',     # works OK at the endpoint but fails validation
+    }
+    params = {
+        'start': '2024-09-17T18:39:00+00:00', 
+        'end':   '2024-09-18T18:39:00+00:00',
+        'limit':   501,    # fails validation as it should
+    }
+    params = {
+        'start': '2024-09-17T18:39:00+00:00', 
+        'end':   '2024-09-18T18:39:00+00:00',
+        'limit':   50,
+    }
+
+    # TODO: validate the parameters.
+    # params = ['start': 'date-time', 'end': '2024-09-21...'}
+    # '2024-09-13T18:39:00+00:00'
+
+    zinfo = rs['paths'][ep]['get']['parameters']
+    yinfo = with_refs['paths'][ep]['get']['parameters']
+    xinfo1 = [{'name': 'start', 'in': 'query', 'description': 'Start time', 'schema': {'type': 'string', 'format': 'date-time'}}, {'name': 'end', 'in': 'query', 'description': 'End time', 'schema': {'type': 'string', 'format': 'date-time'}}, {'name': 'limit', 'in': 'query', 'description': 'Limit', 'schema': {'maximum': 500, 'minimum': 1, 'type': 'integer'}}]
+    assert yinfo == xinfo1
+    xinfo = {
+        'start': {'type': 'string', 'format': 'date-time'}, 
+        'end': {'type': 'string', 'format': 'date-time'}, 
+      'limit': {'maximum': 500, 'minimum': 1, 'type': 'integer'}}
+    # TODO: auto-extract schema.
+    xinfo = dict(properties=xinfo)
+    validator = Draft7Validator(xinfo, format_checker=FormatChecker())
+    assert validator.is_valid(params)
+
+    stationId = 'CO100'   # OK
+    stationId = 'KRCM'    # OK
+    ep = '/stations/{stationId}/observations'
+    with httpx.Client(base_url=local.api_base.nws) as client:
+        r = client.get(ep, params=params)
+        assert r.status_code == 200
+
+        final = []
+        feats = r.json()['features']
+        for ft in feats: 
+            pt = ft['properties']
+            for key in [ '@id', '@type', 'elevation', 'station', 'rawMessage', 'icon', 'presentWeather', 'cloudLayers', 'textDescription', ]:
+                pt.pop(key)
+            for key in pt:
+                if type(pt[key]) is dict:
+                    pt[key] = pt[key]['value']
+            print(pt)
+            final.append(pt)
+
+        df = pandas.DataFrame(final)
+        assert df.shape == (50, 15)
+        temps = df.temperature
+        # TODO:   work to do on auto-validation.
+
+  finally:
+    globals().update(locals())
 
 
 def nws_calls():
@@ -160,36 +217,7 @@ def nws_calls():
         ep = '/alerts'
         ep = '/alerts/active'
 
-        learning_about_parameters = True
-        learning_about_parameters = False
-
-        if learning_about_parameters:
-            # Learning about the parameters
-            ep = '/stations/{stationId}/observations'
-
-            info = rs['paths'][ep]
-            assert len(info) in [1, 2]
-            info = rs['paths'][ep]['get']
-
-            pinfo = rs['paths'][ep]['get']['parameters']
-            xinfo = with_refs['paths'][ep]['get']['parameters']
-#            ainfo = xinfo[4]
-#            einfo = xinfo[2]
-            for param in xinfo:   # list
-                binfo = param
-                pname = binfo['name']
-                assert binfo['in'] == 'query'
-                if 'style' in binfo:
-                    assert binfo['style'] == 'form'
-                    # `point` does not have style.
-                    # and has inline schema.
-                if 'explode' in binfo:
-                    assert binfo['explode'] in [True, False]
-                print(pname)
-            return
-
         no_parameters = False
-
         if no_parameters:
             r = client.get(ep)
             assert r.status_code == 200
@@ -215,11 +243,9 @@ def nws_calls():
             print('------------------------')
             for key in feat:
                 print(key, len(str(feat[key])))
-
             # OK.  
             # That was a successful GET request with NO parameters.
             # Sends back a complex json doc.
-
 
         with_parameters = True
         with_parameters = False
@@ -330,93 +356,6 @@ def nws_calls():
             assert r.status_code == 200
 
 
-          # start here
-          # start here
-          # start here
-          # start here
-          # start here
-          # start here
-        # Get a series of observations suitable for putting in a pandas DF,
-        # and then a jupyter notebook.
-        params = {}
-        params = {
-            'start': '2024-09-17T18:39:00+00:00', 
-            'end':   '2024-09-18T18:39:00+00:00',
-            'limit':   '100',     # works OK at the endpoint but fails validation
-        }
-        params = {
-            'start': '2024-09-17T18:39:00+00:00', 
-            'end':   '2024-09-18T18:39:00+00:00',
-            'limit':   501,    # fails validation as it should
-        }
-        params = {
-            'start': '2024-09-17T18:39:00+00:00', 
-            'end':   '2024-09-18T18:39:00+00:00',
-            'limit':   50,
-        }
-
-        # TODO: validate the parameters.
-        xinfo = with_refs['paths'][ep]   #['get']['parameters']
-        xinfo = with_refs['paths'][ep]['get']   #['parameters']
-
-        # fails here vvv because ^^^ is a list.
-#        xinfo = with_refs['paths'][ep]['get']['parameters']
-        xinfo = [{'name': 'start', 'in': 'query', 'description': 'Start time', 'schema': {'type': 'string', 'format': 'date-time'}}, {'name': 'end', 'in': 'query', 'description': 'End time', 'schema': {'type': 'string', 'format': 'date-time'}}, {'name': 'limit', 'in': 'query', 'description': 'Limit', 'schema': {'maximum': 500, 'minimum': 1, 'type': 'integer'}}]
-        xinfo = {
-            'start': {'type': 'string', 'format': 'date-time'}, 
-            'end': {'type': 'string', 'format': 'date-time'}, 
-          'limit': {'maximum': 500, 'minimum': 1, 'type': 'integer'}}
-        xinfo = dict(properties=xinfo)
-        validator = Draft7Validator(xinfo, format_checker=FormatChecker())
-        assert validator.is_valid(params)
-
-        series = False
-        series = True
-        if series:
-            stationId = 'KRCM'    # OK
-            stationId = 'CO100'   # OK
-            ep = f'/stations/{stationId}/observations'
-            r = client.get(ep, params=params)
-
-            final = []
-            feats = r.json()['features']
-            for ft in feats: 
-                pt = ft['properties']
-                for key in [
-                '@id',
-                '@type',
-                'elevation',
-                'station',
-                'rawMessage',
-                'icon',
-                'presentWeather',
-                'cloudLayers',
-                'textDescription',
-                ]:
-                    pt.pop(key)
-                for key in pt:
-                    if type(pt[key]) is dict:
-                        pt[key] = pt[key]['value']
-                print(pt)
-                final.append(pt)
-#            temp = props['temperature']
-            assert r.status_code == 200
-          # That's it!!!
-          # `final` is ready to be a pandas DF.
-          # start here
-          # start here
-          # start here
-          # start here
-          # start here
-          # Pass and validate parameters.
-          # Which will be start and/or end times.
-#          params = ['start': 'date-time', 'end': '2024-09-21...'}
-          # '2024-09-13T18:39:00+00:00'
-        df = pandas.DataFrame(final)
-        # super !!!!!!!!!!
-        # Now need tons of cleanup
-
-
         products = True
         products = False
         if products:
@@ -428,80 +367,7 @@ def nws_calls():
                 print(pthing)
             assert r.status_code == 200
 
-
-
-
-
-  finally:
-    globals().update(locals())
-# TODO: pagination
-# TODO: pagination
-# TODO: pagination
-
-def petstore_calls():
-  try:
-    with httpx.Client(base_url=local.api_base.pet) as client:
-        ep = '/pet/findByStatus'
-
-        vd = validator_for(ep, 'get')
-        params = ['available', 'sold']  # passes validation but returns []
-        vd(params)
-#        a job for preprocessing ?
-
-        r = client.get(ep, params=params)
-        assert r.status_code == 200
-        foo = r.json()
-        assert foo == []
-        # OK.  There is a successful GET request.
-
-        params = {'status': 'available'}  # good result but fails validation
-        r = client.get(ep, params=params)
-        foo = r.json()
-        assert len(foo) > 11
-        with pytest.raises(jsonschema.exceptions.ValidationError):
-            vd(params)
-
-        ep = '/pet'
-        params = {"name": 'kittyX', 'photoUrls': [], 'category': {}, 'status': 'sold'}
-        header = {'Content-Type': 'application/json'}
-        vd2 = validator_for(ep, 'post')
-        vd2(params)
-        r2 = client.post(ep, data=json.dumps(params), headers=header)
-        assert r2.status_code == 200
-        assert r2.reason_phrase == 'OK'
-        # OK.  There is a successful POST request.
-
-        ep = '/user'
-        user_data = {
-          "id": 0,
-          "username": "string",
-          "firstName": "string",
-          "lastName": "string",
-          "email": "string",
-          "password": "string",
-          "phone": "string",
-          "userStatus": 0
-        }
-        vd3 = validator_for(ep, 'post')
-        vd3(user_data)
-        headers = {'Content-Type': 'application/json'}
-        r3 = client.post(ep, data=json.dumps(user_data), headers=headers)
-        assert r3.status_code == 200
-        assert r3.reason_phrase == 'OK'
-        # OK.  Another successful POST request.
- 
   finally:
     globals().update(locals())
 
-
-def validator_for(endpoint, verb):     # pets
-    schema = get_endpoint_schemas_pets()[endpoint][verb]
-    if 'required' in schema and schema['required'] is True:  # preprocessing
-        del schema['required'] 
-    fun = lambda ob: validate(ob, schema=schema)
-    fun.endpoint = endpoint
-    fun.verb = verb
-    fun.schema = schema
-    return fun
-
-
+# TODO: how to get good stationId ???
