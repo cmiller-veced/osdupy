@@ -106,6 +106,12 @@ Aframe is a javascript library around (WebGL?).
 - https://newton.vercel.app   no swagger.   symbolic math
 
 
+#### The competition
+
+- https://github.com/WxBDM/nwsapy/blob/master/nwsapy/
+  a worthy competitor.
+
+- google:  nws api client       for useful links
 
 ### Our tools
 
@@ -255,5 +261,167 @@ A. Start at the end and work backwards.  From POV of end user/programmer.
 - x 
 
 Need two research questions and related hypotheses.
+
+
+#### The wrong question.
+
+A common question on StackOverflow...
+
+"""
+I have a complex json document and want to convert it into Python data.
+How can I do that?
+"""
+
+¡¡¡¡News Flash!!!!!
+
+json data IS Python data.
+
+Converting json data into OO does not reduce essential complexity.
+In general, json data is dense.
+Converting to OO INCREASES complexity, usully ELIMINATING information at the
+same time.
+
+
+Sancho Prize for Ura.   For beating both Ozeki.
+If he gets Katchikoshi.
+
+json == essential complexity.
+Learn to deal with it.
+conversion => complexity, opportunity for translation errors
+
+
+#### Industry Standzzrd
+
+blha blah
+
+
+#### but Grossly Mistaken
+
+been reading Franklin
+
+- you doon't change it and
+- you don't thrhow it away
+
+
+#### A step in the right direction
+
+Make your code pass this test.
+
+def test(self):
+    self.to_dict() == self  == dict(self)`
+    self.to_dict() is self  is dict(self)`
+    # dict(self) keeps us honest
+    # altering the `dict` function not allowed.
+
+
+#### Javathonic / Simplistic
+
+Simplistic == sadly True 
+Ironic
+Adding syllables does not make for a better word.
+
+
+class-based translation is a simplification / approximation of the actual
+problem.  Then the business problem is solved on this simplified version and
+then the data re-transformed back to original (or some other) format, and we
+hope the actual problem is solved.  Often it is almost solved.  Edge cases left
+uncovered, etc.
+
+
+#### For Managemnt Eyes Only
+
+Red flags for simplistic code.
+
+- lots of to_dict methods
+- validation of an approximation
+- x
+
+
+#### This is not a joke
+
+It is treated as a joke by industry standard but.
+Energy given to translation/simplification is energy NOT given to solving the
+business problem.
+
+The difference is measurable.
+
+- McCabe cyclomatic complexity
+- at the computational level.   (not green)
+
+It simply makes more operations by the computer.  This adds up.  Not green.
+
+btw.  I bet there is a way to measure information density of json data vs class
+data.  And I'm betting it turns out json is more dense.  So we transform dense
+data in a simplistic way.  Solve the problem using the simplistic
+representation, and then re-translate.   ugh.
+I propose to work with the actual data instead.
+
+Yes, it's a bit more difficult.  But the advantages accrue as the business
+problems get more demanding.
+
+
+#### When NOT to use it
+
+- fast-changing API
+- small projects
+- one-off projects
+- throw-away code
+- short-term projects
+
+#### When to use it
+
+- multiple APIs
+- solving unknown problems
+- solving problems you have not thought of yet
+
+#### message to management
+
+The simplistic approach constrains your thinking.
+Your programmers tell you it takes a long time to solve simple problems and it
+is not true.
+
+industry standard claim:  Working with the original incoming data is too hard.
+We have to simplify before solving.
+
+fact:  Working with json data is not so hard if you actually use the language
+instead of writing javathonic code.
+
+Pythonic is NOT automatically using classes to solve every problem.
+Pythonic means solving the problem in the fewest possible code statements.
+Pythonic means using the power of the Python language, not writing Java code in
+Python.
+
+- not reinventing the wheel
+
+### The Industry Standard is Simplistic
+
+And that is a 
+
+- slow
+- clumsy
+- tedious
+- error-prone
+- labor-intensive
+
+way of solving problems.
+
+#### The other way
+
+When you do this, the programmer ends up speaking about objects that
+are familiar to a person who understands the API.  People such as
+
+- manager
+- data analyst
+
+Streamlines the problem solving process.
+
+### Do not try to guess what they/you will need
+
+you will get it wrong.
+
+### Jupyter Notebook
+
+do it.
+
 
 
