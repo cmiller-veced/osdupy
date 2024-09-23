@@ -219,6 +219,7 @@ You miss out on a lot.
 
 - DAO: data in object drag
 - WIP: work in progress
+- SDK: aka client
 
 # FAQ
 
