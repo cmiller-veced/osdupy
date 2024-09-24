@@ -125,6 +125,7 @@ Aframe is a javascript library around (WebGL?).
 - https://developer.mozilla.org/en-US/docs/Web/API/
 - https://github.com/APIs-guru/openapi-directory
 - https://github.com/public-apis/public-apis
+- python hypothesis for auto-generating data
 
 
 -----------------------------
@@ -423,6 +424,30 @@ you will get it wrong.
 ### Jupyter Notebook
 
 do it.
+
+### Advice
+
+Put the logic into data.  Pero como de costumbre hay mas a pensar.
+
+
+
+I like this distinction from wikipedia [1] "Anything that is a process or
+procedure is business logic, and anything that is neither a process nor
+a procedure is a business rule." Meaning constraints and the model represent
+business rules.
+1. https://en.wikipedia.org/wiki/Business_logic
+
+
+I find that there are very few things related to programming that don't
+constitute an interface in some way,
+
+
+Here's what I'm talking about...
+
+https://swizec.com/blog/how-to-think-of-your-business-logic-as-data/
+
+!!!!!!!!!!!!!!!!!
+
 
 
 
