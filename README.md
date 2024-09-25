@@ -449,5 +449,35 @@ https://swizec.com/blog/how-to-think-of-your-business-logic-as-data/
 !!!!!!!!!!!!!!!!!
 
 
+### Things to watch
+
+- https://htmx.org  Interactivity w/o javascript
+- https://opensource.fb.com/projects/ Meta Opensource
+- https://jinja.palletsprojects.com/en/3.1.x/templates/
+   how to do templates
+
+### Interesting reading
+- https://blog.postman.com/what-is-json-schema/
+- https://www.semanticarts.com/data-centric-how-big-things-get-done-in-it/
+- https://www.semanticarts.com/the-data-centric-revolution-best-practices-and-schools-of-ontology-design/
+
+
+### Competition
+- https://openapi-core.readthedocs.io/en/latest/extensions.html
+- https://github.com/commonism/aiopenapi3
+- https://github.com/wy-z/requests-openapi
+- 
+- 
+
+
+### Caveat
+
+jsonschema cannot do everything.
+
+
+
+Tianya
+
+book.   How big things get done.
 
 
