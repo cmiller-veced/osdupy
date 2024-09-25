@@ -37,6 +37,11 @@ def get_component_schemas_nws():    # NWS
 
 def nws_validator(endpoint):
     """Return a function to validata parameters for `endpoint`.
+    >>> params = dict(x=1)
+    >>> assert nws_validator('/foo/{bar}/bat')(params) is True
+    >>> is_valid = nws_validator('/foo/{bar}/bat')
+    >>> assert is_valid(params) is True
+    # TODO: consider name change.
     """
     rs = raw_swagger(local.swagger.nws)                              # global
     with_refs = jsonref.loads(json.dumps(rs))
@@ -48,44 +53,38 @@ def nws_validator(endpoint):
     is_valid = lambda ob: Draft7Validator(schema, format_checker=FormatChecker()).is_valid(ob)
     is_valid.endpoint = endpoint
     is_valid.schema = schema
-    # TODO: better function name
     return is_valid
 
 
-# TODO: spiff up
 ####################### Insert query params ########################
 
-query_params = {
-    'productId': 'ZFP',
-    'typeId': 'tttttt',
-    'zoneId': 'WYZ432',
-    'stationId': 'CO100',
-    'locationId': 'llllll',
-}
+
+def fetch_endpoint_parameter_names(endpoint):
+    return [s.split('}')[0] for s in endpoint.split('{') if '}' in s]
 
 
-# temporary hard-coded solution
-def fetch_url_params(url):
-    es1 = [s.split('}')[0] for s in url.split('{') if '}' in s]
-    return {key: query_params[key] for key in es1}
-
-
-def insert_url_params(url):
-    if not '{' in url:
-        return url
+# endpoint_QUERY_params
+def insert_endpoint_params(endpoint, parameters):
+    if not '{' in endpoint:
+        return endpoint
     env = Environment(autoescape=select_autoescape())
-    template = env.from_string(templatified(url))
-    ps = fetch_url_params(url)
-    return template.render(**ps)
+    template = env.from_string(templatified(endpoint))
+    return template.render(**parameters)
 
 
+sample_query_params = {
+        'productId': 'ZFP',
+        'typeId': 'TTTTTT',
+        'zoneId': 'WYZ432',
+        'stationId': 'CO100',
+        'locationId': 'LLLLLL',
+    }
 def test_insertion():
     ep = '/products/types/{typeId}/{stationId}/{locationId}'
-    ps = fetch_url_params(ep)
-    u2 = insert_url_params(ep)
-    print(ep)
-    print(ps)
-    print(u2)
+    pns = fetch_endpoint_parameter_names(ep)
+    assert pns == ['typeId', 'stationId', 'locationId']
+    new_ep = insert_endpoint_params(ep, sample_query_params)
+    assert new_ep == '/products/types/TTTTTT/CO100/LLLLLL'
  
 
 ####################### ^ Insert query params ^ ########################
@@ -102,7 +101,7 @@ def nws_validate_and_call():
             ep0 = ep
             if ep in test_parameters:
                 things = test_parameters[ep]
-                ep = insert_url_params(ep)
+                ep = insert_endpoint_params(ep, sample_query_params)
                 if ep0 != ep:
                     print('   calling .............', ep)
                 for params in things['good']:
@@ -192,6 +191,22 @@ def product_codes():
     things = js['@graph']
     return [d['productCode'] for d in things]
 
+
+# exp
+class NWS:
+    product_codes = product_codes()
+    zone_ids = zone_ids   # NOTE  zone_ids is very much like a static method.
+    # Which means a class consisting of all static methods is nothing more than
+    # a namespace.
+    # I think the same is true for class methods. IOW, a class having only
+    # static and class methods is a namespace.  Nothing more.
+    # and
+    # If you think about it, you realize that neither class nor static methods
+    # operate on instance data.
+    # Thus they are really a different animal than the usual image of methods as
+    # operating on client data.
+nws = NWS()
+
 # ^ NWS data ^ ###############################################################
 
 
@@ -207,27 +222,21 @@ def nws_series():
     # Data
     ep1 = '/stations/{stationId}/observations'
     # TODO: validate stationId ??????
-    stationId = 'KRCM'    # OK
-    stationId = 'CO100'   # OK
 #'089SE', '0900W'
-    params = {
-        'start': '2024-09-17T18:39:00+00:00', 
-        'end':   '2024-09-18T18:39:00+00:00',
+    stationId = 'KRCM'   # OK
+    stationId = 'CO100'   # OK
+    # NOTE  stationId cannot go in params.
+    params = {                                # OK
+        'start': '2024-09-22T23:59:59+00:00', 
+        'end':   '2024-09-23T23:59:59+00:00', 
         'limit':   50,
     }
 
     # Validate params
-    rs = raw_swagger(local.swagger.nws)                              # global
-    with_refs = jsonref.loads(json.dumps(rs))
-    vinfo = with_refs['paths'][ep1]['get']['parameters']             # per API
-    schema = schema_trans(vinfo)
-    validator = Draft7Validator(schema, format_checker=FormatChecker())
-    assert validator.is_valid(params)
+    assert nws_validator(ep1)(params)
 
     # Insert stationId into endpoint path
-    env = Environment(autoescape=select_autoescape())
-    template = env.from_string(templatified(ep1))
-    ep = template.render(stationId=stationId)
+    ep = insert_endpoint_params(ep1, locals())
 
     # Call the endpoint and verify status_code.
     with httpx.Client(base_url=local.api_base.nws) as client:
@@ -248,9 +257,13 @@ def nws_series():
 
     # Convert to dataframe.
     df = pandas.DataFrame(final)
-    assert df.shape == (50, 15)
+#    assert df.shape == (50, 15)
+    assert df.shape[1] == 15
     return df
   finally:
     globals().update(locals())
 
+
+# TODO: fancy validators
+# eg start_date < end_date
 

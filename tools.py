@@ -212,8 +212,6 @@ SyntaxError: invalid syntax
 
 
 # TODO: pagination
-# TODO: pagination
-# TODO: pagination
 
 # Jmespath (stronger than jsonpath)
 # ###########################################################################
@@ -221,6 +219,7 @@ SyntaxError: invalid syntax
 import jmespath
 
 
+# TODO: function to update json doc based on jmespath.
 def demo_jmespath():
     q = 'store.book[0]'           # first book
     q = ''

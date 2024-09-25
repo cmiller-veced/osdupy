@@ -1,7 +1,4 @@
 
-
-
-
 active_alerts = {
     'good': [
         { 'area': ['WY'], 'limit':   50, },
