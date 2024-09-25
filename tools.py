@@ -214,3 +214,125 @@ SyntaxError: invalid syntax
 # TODO: pagination
 # TODO: pagination
 # TODO: pagination
+
+# Jmespath (stronger than jsonpath)
+# ###########################################################################
+
+import jmespath
+
+
+def demo_jmespath():
+    q = 'store.book[0]'           # first book
+    q = ''
+    q = 'store.book[*].price'     # all book prices
+    q = 'store.*.price'           # 399
+    q = '*.price'           # []
+    q = '**.price'           # exception
+    q = '*.*.price'           # [[399]]
+    q = '[].*.price'           # None
+    q = '..price'                 # fails to get all prices.
+ 
+    jdoc = {
+      "store": {
+        "book": [
+          { "author": "Nigel Rees",
+            "title": "Sayings of the Century",
+            "price": 8.95
+          },
+          { "author": "J. R. R. Tolkien",
+            "title": "The Lord of the Rings",
+            "isbn": "0-395-19395-8",
+            "price": 22.99
+          }
+        ],
+        "bicycle": {
+          "color": "red",
+          "price": 399
+        }
+      }
+    }
+
+    path = jmespath.search('foo.bar', {'foo': {'bar': 'baz'}})
+    j = jmespath.search('foo.bar', jdoc)
+    q = '..price'                 # exception
+    q = 'store.*.price'           # [399]
+    q = 'store.*.*.price'           # [[]]
+    q = 'store.book.*.price'           # None
+    q = 'store.book.[*].price'           # None
+    q = 'store.book[*].price'           # [8.95, 22.99]
+    q = 'store.book[*]'           # the two books
+    q = 'store.*'           # a two-element list.  First element is another list
+    # containing the two books.  Second element is the bike.
+
+    # https://pypi.org/project/jmespath/
+    expression = jmespath.compile(q)
+    j = expression.search(jdoc)
+    j2 = [[{'author': 'Nigel Rees', 'title': 'Sayings of the Century', 'price': 8.95}, {'author': 'J. R. R. Tolkien', 'title': 'The Lord of the Rings', 'isbn': '0-395-19395-8', 'price': 22.99}], {'color': 'red', 'price': 399}]
+    globals().update(locals())
+
+# Find out if jmespath set values too, rather than only extract.
+# Methinks it is only for extracting.
+# Write something to take jmespath.
+#
+#
+
+
+# Principle:  Use cross-platform tools.  
+# jmespath
+# jsonschema
+# bash   (shows up in GHA, terraform, ansible, etc)
+
+
+# flatten list
+
+j3 = [['a', 'b'], ['c']]
+jj = [x for thing in j3 for x in thing]
+for thing in j3:
+    for x in thing:
+        x
+
+j3 = [['a', 'b'], 'c']
+# goal == 'abc'
+[thing for thing in j3 ]
+for thing in j3:
+    for x in thing:
+        x
+jt = [x for thing in j3 for x in thing]
+assert jt == ['a', 'b', 'c']
+# ok but works only because 'c' is a single letter
+j3 = [['aa', 'b'], 'cc']
+jt = [x for thing in j3 for x in thing]
+assert jt == ['aa', 'b', 'c', 'c']
+jt = [x if type(thing) is list else thing for thing in j3 for x in thing]
+# not quite right
+assert jt == ['aa', 'b', 'cc', 'cc']
+#jt = [x for thing in j3 if type(thing) is list else [thing] for x in thing]
+#jt = [thing for thing in j3 if type(thing) is list else [thing]]  # invalid syntax
+#jt = [thing else 'x' for thing in j3 if type(thing) is list]  # invalid syntax
+
+jt = [a if a else 2 for a in [0,1,0,3]]
+jt = [a if a else [2] for a in [0,1,0,3]]
+#jt = [thing for thing in j3 if (type(thing) is list) else [thing]]  # invalid syntax
+
+jtt = [thing if (type(thing) is list) else [thing] for thing in j3]  # ok
+# but not solving the problem.
+assert jtt == [['aa', 'b'], ['cc']]
+# which can then be used with the OTHER list comprehension.  But sort of makes
+# the problem more complex, and only addresses one level of nesting
+# tldr; 
+# much complicated in a list comprehension.
+# Try a recursive function.
+
+# on stackoverflow we find this...
+def flatten(container):
+    for i in container:
+        if isinstance(i, (list,tuple)):
+            for j in flatten(i):
+                yield j
+        else:
+            yield i
+nests = [1, 2, [3, 4, [5],['hi']], [6, [[[7, 'hello']]]]]
+assert list(flatten(nests)) == [1, 2, 3, 4, 5, 'hi', 6, 7, 'hello']
+# snappy
+
+
