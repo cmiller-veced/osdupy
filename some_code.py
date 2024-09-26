@@ -24,7 +24,6 @@ from tools import (
 )
 
 
-# NWS-specific (but who knows who else might do the same).
 def schema_trans(schema_list):
     return {'properties': {thing['name']: thing['schema'] for thing in schema_list} }
 

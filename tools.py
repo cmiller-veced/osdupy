@@ -7,20 +7,17 @@ from pprint import pprint
 from jinja2 import Environment, PackageLoader, select_autoescape     # cross platform
 
 pet_swagger = 'https://petstore.swagger.io/v2/swagger.json'
-pet_swagger_local = '~/local/petstore/swagger.json'
-pet_swagger_full = '/Users/cary/local/petstore/swagger.json'
-
-nws_openapi_local = '~/local/nws/openapi.json'
 
 
 class local:       # our data.   (vs their data (in swagger))
     class swagger:
-        pet = pet_swagger_local
-        nws = nws_openapi_local
+        pet = '~/local/petstore/swagger.json'
+        nws = '~/local/nws/openapi.json'
+        protein = '~/local/ebi/protein_openapi.json'
     class api_base:
         pet = 'https://petstore.swagger.io/v2'
         nws = 'https://api.weather.gov'
-
+        protein = 'https://www.ebi.ac.uk/proteins/api'
 
 
 def preprocess_schemas(schemas):
