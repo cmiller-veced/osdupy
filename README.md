@@ -475,8 +475,38 @@ https://swizec.com/blog/how-to-think-of-your-business-logic-as-data/
 jsonschema cannot do everything.
 
 
+### Outsourcing the thinking.
 
-Tianya
+We cannot do everything from first principles.  This is the whole point of high
+level languages.  But we should not outsource our fundamental tasks eg
+validation.
+Maintain the data in its original representation unless there is a compelling
+business need.
+And do not discard information unless there is a business need.
+eg validation info in the OpenAPI file.
+
+"we use Pydantic for validation" is a specious argument.  There is no need to
+transform the data before validation.
+
+When you do this you shift from thinking about the original data to thinking
+about Python classes, which may or may not be an accurate representation.
+And you think about transforming data instead of using data.
+
+
+### Represent our own data in json too.
+
+- Then we store it in simple text file.
+- super easy I/O with Python
+- cross-platform.  Totally transferable to other language.  Try that with classes.
+   
+
+### Unstated Assumptions
+
+Needless transformation
+
+Unstated assumptions in code should never go unquestioned.
+
+
 
 book.   How big things get done.
 
