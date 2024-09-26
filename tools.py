@@ -1,17 +1,16 @@
 import json
 import os
-
 from functools import singledispatch  # for heterogeneous recursive data structure
 from types import SimpleNamespace
 from pprint import pprint
 
+from jinja2 import Environment, PackageLoader, select_autoescape     # cross platform
 
 pet_swagger = 'https://petstore.swagger.io/v2/swagger.json'
 pet_swagger_local = '~/local/petstore/swagger.json'
 pet_swagger_full = '/Users/cary/local/petstore/swagger.json'
 
 nws_openapi_local = '~/local/nws/openapi.json'
-
 
 
 class local:       # our data.   (vs their data (in swagger))
@@ -209,6 +208,45 @@ wtf_namespace = """
          ^
 SyntaxError: invalid syntax
 """      # what's the problem?
+
+
+####################### Insert query params ########################
+
+
+def fetch_endpoint_parameter_names(endpoint):
+    return [s.split('}')[0] for s in endpoint.split('{') if '}' in s]
+
+
+# endpoint_QUERY_params
+def insert_endpoint_params(endpoint, parameters):
+    if not '{' in endpoint:
+        return endpoint
+    env = Environment(autoescape=select_autoescape())
+    template = env.from_string(templatified(endpoint))
+    return template.render(**parameters)
+
+
+sample_query_params = {
+        'productId': 'ZFP',
+        'typeId': 'TTTTTT',
+        'zoneId': 'WYZ432',
+        'stationId': 'CO100',
+        'locationId': 'LLLLLL',
+    }
+def test_insertion():
+    ep = '/products/types/{typeId}/{stationId}/{locationId}'
+    pns = fetch_endpoint_parameter_names(ep)
+    assert pns == ['typeId', 'stationId', 'locationId']
+    new_ep = insert_endpoint_params(ep, sample_query_params)
+    assert new_ep == '/products/types/TTTTTT/CO100/LLLLLL'
+ 
+
+####################### ^ Insert query params ^ ########################
+
+
+# general
+def templatified(s):
+    return s.replace('{', '{{').replace('}', '}}')
 
 
 # TODO: pagination
