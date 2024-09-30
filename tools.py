@@ -14,10 +14,17 @@ class local:       # our data.   (vs their data (in swagger))
         pet = '~/local/petstore/swagger.json'
         nws = '~/local/nws/openapi.json'
         protein = '~/local/ebi/protein_openapi.json'
+        libre =  '~/local/libretranslate/openapi.json'
+        jira =  '~/local/jira/openapi.json'
     class api_base:
         pet = 'https://petstore.swagger.io/v2'
         nws = 'https://api.weather.gov'
         protein = 'https://www.ebi.ac.uk/proteins/api'
+        libre = 'https://libretranslate.com'     # ????
+        libre = 'http://localhost:5000'     # ????
+        # Must run the server locally...
+        # /Users/cary/Library/Python/3.9/bin/libretranslate
+        jira = ''
 
 
 def preprocess_schemas(schemas):
