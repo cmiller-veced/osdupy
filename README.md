@@ -507,6 +507,33 @@ Needless transformation
 Unstated assumptions in code should never go unquestioned.
 
 
+- https://geocoding.geo.census.gov/geocoder/Geocoding_Services_API.html
+- https://docs.biothings.io/en/latest/
+- https://stackoverflow.com/questions/2067472/what-is-jsonp-and-why-was-it-created
+  jsonp == cross-domain requests
+  but CORS is better.
+- https://docs.mychem.info/en/latest/doc/chem_annotation_service.html
+  a super simple API.  No swagger.
+  uses optional jsonp, which is antiquated.
+
+- https://github.com/bio-tools/OpenAPI-Importer     competition ??????
+- https://www.biorxiv.org/content/10.1101/170274v1.full.pdf
+    has list of biology openAPI services
+- https://github.com/BiGCAT-UM/EnsemblOpenAPI
+- http://www.ebi.ac.uk/proteins/api/swagger.json     NO
+- https://www.ebi.ac.uk/proteins/api/openapi.json    yes
+
+https://raw.githubusercontent.com/BiGCAT-UM/EnsemblOpenAPI/master/swagger.json
+
+- https://libretranslate.com/docs/
+- https://swagger.io/tools/swagger-codegen/  competition.........
+- https://github.com/swagger-api/swagger-codegen  the actual code
+  still compatible w/ Python 2.
+
+- https://stackoverflow.com/questions/61112684/how-to-subclass-a-dictionary-so-it-supports-generic-type-hints
+  Interesting discussion of subclassing builtins.
+
+
 
 book.   How big things get done.
 
