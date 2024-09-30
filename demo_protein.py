@@ -29,6 +29,10 @@ sample_query_params = {
 }
 
 
+# https://www.ebi.ac.uk/proteins/api/doc/#!/taxonomy/getTaxonomyLineageById
+# shows /taxonomy endpoints but these are not present in the OpenAPI file.
+
+
 def get_component_schemas_protein():    # EBI
   try:
     rs = raw_swagger(local.swagger.protein)
