@@ -1,33 +1,9 @@
-# TODO: fooooeeeeeeey!
-# TODO: fooooeeeeeeey!
-# TODO: fooooeeeeeeey!
-# TODO: fooooeeeeeeey!
-# TODO: fooooeeeeeeey!
-# TODO: fooooeeeeeeey!
-# TODO: fooooeeeeeeey!
-# Requires APIkey and $
-# Requires APIkey and $
-# Requires APIkey and $
-# Requires APIkey and $
-# Requires APIkey and $
-# Requires APIkey and $
 # Requires APIkey and $
 # or run locally.
 # python -m pip install libretranslate => downgrades of multiple packages eg
 # numpy
 
-# TODO: try cmd2 in place of cmd.
-import cmd2
-import cmd2
-import cmd2
-import cmd2
-import cmd2
-import cmd2
-import gnureadline
-
-
-
-from libre_test_data import test_parameters
+from test_data_libre import test_parameters
 import json
 
 import httpx      # similar to R data frames
@@ -51,18 +27,14 @@ from some_code import schema_trans
 from pprint import pprint
 
 head = {'accept': 'application/json'}  # 
-#sample_query_params = { 'accession': test_parameters['/proteins']['good'][0]['accession'], }
+api_file_path = local.swagger.libre
+api_base = local.api_base.libre
 
 
 def get_component_schemas_libre():    #  # TODO: rename func
-  try:
-
     rs = raw_swagger(local.swagger.libre)
     with_refs = jsonref.loads(json.dumps(rs))
-    defs = with_refs['definitions']
-    return defs
-  finally:
-    globals().update(locals())
+    return with_refs['definitions']
 
 
 def schema_trans(schema_list):
@@ -70,7 +42,6 @@ def schema_trans(schema_list):
     for thing in schema_list:
         d['name'] = thing['schema'] if 'schema' in thing else {}
     return {'properties': d}
-#    return {'properties': {thing['name']: thing['schema'] for thing in schema_list} }
 
 
 def validator_func(openapi_file, endpoint):
@@ -87,14 +58,6 @@ def validator_func(openapi_file, endpoint):
         vinfo = tv['parameters']
     else:
         vinfo = {}
-
-#    for sting in vinfo: sting['schema']
-
-#    try: vinfo = thing['parameters'] if 'parameters' in thing else thing['get']['parameters']
-#    except KeyError:
-#        is_valid = lambda ob: 'unknown'
-#        schema = None
-#        return is_valid
     schema = schema_trans(vinfo)     # 
     assert list(schema.keys()) == ['properties']
 #    print(endpoint, list(schema['properties'].keys()))
@@ -104,35 +67,6 @@ def validator_func(openapi_file, endpoint):
     globals().update(locals())
     is_valid.endpoint = endpoint
     is_valid.schema = schema
-
-
-api_file_path = local.swagger.libre
-api_base = local.api_base.libre
-
-# ['/detect', '/frontend/settings', '/languages', '/suggest', '/translate', '/translate_file'])
-flip = True
-if not flip:
-    endpoint = '/languages'
-    endpoint = '/detect'
-    is_valid = validator_func(local.swagger.libre, endpoint)
-    data = {'q': 'Que idioma es?'}
-    assert is_valid(data)
-    data = {'x': 'Que idioma es?'}
-    assert is_valid(data)
-    data = {'q': 55}
-    assert not is_valid(data)
-
-if flip:
-    endpoint = '/frontend/settings'
-    endpoint = '/translate_file'
-    openapi_file = api_file_path
-    rs = raw_swagger(openapi_file)     # protein vs nws vs libre
-    with_refs = jsonref.loads(json.dumps(rs))
-    thing = with_refs['paths'][endpoint]
-    verb = list(thing.keys())[0]
-    tv = thing[verb]
-#    vinfo = tv['parameters']
-    is_valid = validator_func(local.swagger.libre, endpoint)
 
 
 def validate_and_call():
@@ -169,19 +103,24 @@ def validate_and_call():
                     r = client.get(ep, params=params)
                     assert r.status_code != 404    # Bad endpoint
                     assert r.status_code in [400, 500]    # Bad Parameter
-                    # or Server Error
-                    # 500 from /zones/forecast/{zoneId}/stations
-                    # with {'limit': '100'}
   finally:
     globals().update(locals())
 
 
-# NOT specific to NWS except for base_url
-def nws_call(endpoint, params=None):
-    with httpx.Client(base_url=local.api_base.nws) as client:
-        r = client.get(endpoint, params=params)
-        assert r.status_code == 200
-    return r.json()
+# Interactive repl
+# #########################################################################
+
+import cmd, sys
+from turtle import *
+import readline
+import os
+
+# TODO: try cmd2 in place of cmd.
+#import cmd2
+#import gnureadline
+
+histfile = os.path.expanduser('~/.trans_history')
+histfile_size = 1000000
 
 
 def translate(params):
@@ -189,14 +128,17 @@ def translate(params):
     api_base = local.api_base.libre
     with httpx.Client(base_url=api_base) as client:
         r = client.post(endpoint, params=params)
-        globals().update(locals())
         assert r.status_code == 200
     return r.json()
 
 
-params = {}
-params = {'q': 'What language is this?', 'source': 'en', 'target': 'es'}
-tp = translate(params)
+def languages():
+    endpoint = '/languages'
+    api_base = local.api_base.libre
+    with httpx.Client(base_url=api_base) as client:
+        r = client.get(endpoint, params=params)
+        assert r.status_code == 200
+    return r.json()
 
 
 def es2ingles(phrase):
@@ -215,14 +157,6 @@ def en2spanish(phrase):
         r = client.post(endpoint, params=params)
     return r.json()['translatedText']
 
-
-import cmd, sys
-from turtle import *
-import readline
-import os
-
-histfile = os.path.expanduser('~/.trans_history')
-histfile_size = 1000000
 
 class TurtleShell(cmd.Cmd):
     intro = 'Welcome to the trans shell.   Type help or ? to list commands.\n'
@@ -263,73 +197,4 @@ def go():
     TurtleShell().cmdloop()
 
 
-
-
-def languages():
-    endpoint = '/languages'
-    api_base = local.api_base.libre
-    with httpx.Client(base_url=api_base) as client:
-        r = client.get(endpoint, params=params)
-        globals().update(locals())
-        assert r.status_code == 200
-    return r.json()
-
-if 0:
-    lan = languages()
-    for sub in lan:
-        print(sub['code'], sub['name'],) 
-
-
-# xxx data ##################################################################
-
-
-def nws_series():
-  try:
-    """ Get a series of observations suitable for putting in a pandas DF,
-    and then a jupyter notebook.
-    """
-    # Data
-    ep1 = '/stations/{stationId}/observations'
-    # TODO: validate stationId ??????
-#'089SE', '0900W'
-    stationId = 'KRCM'   # OK
-    stationId = 'CO100'   # OK
-    # NOTE  stationId cannot go in params.
-    params = {                                # OK
-        'start': '2024-09-22T23:59:59+00:00', 
-        'end':   '2024-09-23T23:59:59+00:00', 
-        'limit':   50,
-    }
-
-    # Validate params
-    assert nws_validator(ep1)(params)
-
-    # Insert stationId into endpoint path
-    ep = insert_endpoint_params(ep1, locals())
-
-    # Call the endpoint and verify status_code.
-    with httpx.Client(base_url=local.api_base.nws) as client:
-        r = client.get(ep, params=params)
-        assert r.status_code == 200
-
-    # Extract desired data from response.
-    final = []
-    feats = r.json()['features']
-    for ft in feats: 
-        pt = ft['properties']
-        for key in [ '@id', '@type', 'elevation', 'station', 'rawMessage', 'icon', 'presentWeather', 'cloudLayers', 'textDescription', ]:
-            pt.pop(key)
-        for key in pt:
-            if type(pt[key]) is dict:
-                pt[key] = pt[key]['value']
-        final.append(pt)
-
-    # Convert to dataframe.
-    df = pandas.DataFrame(final)
-#    assert df.shape == (50, 15)
-    assert df.shape[1] == 15
-    return df
-  finally:
-    globals().update(locals())
-
-
+# ['/detect', '/frontend/settings', '/languages', '/suggest', '/translate', '/translate_file'])
