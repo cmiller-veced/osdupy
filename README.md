@@ -1,8 +1,26 @@
 # readme
 
+The landscape is crowded with Python validation libraries.  Why would I create
+another one?  Because...
+
+1.  It's obviously not a definitively solved problem
+B.  I have a different way of doing it.
+
+A big part of the new vision is eliminating needless transformation.  So things
+like DAOs have no place in it.  Yes, I'm saying a DAO is a needless
+transformation.  Maybe not always, but I've yet to see a needful one.  If you
+think about it, you will notice that the only benefit of the average DAO is the
+dot notation for attribute access.  You don't need DAO for that.  If we need it
+we will do it, without resorting to the LCD that is DAO.
+
+- LCD:  lowest common denominator
+
+btw.  It's not so much a data validation library as a set of techniques for
+accessing APIs.  Validation is part of it, but by no means the primary focus.
+Important, yes, but not the center of the universe.
 
 
-A tool for quickly creating high quality API clients.  Initial target APIs are
+A tool for quickly creating high quality API clients (SDKs).  Initial target APIs are
 those defined in Swagger/OpenAPI.
 
 First step is to read swagger / OpenAPI files.
@@ -14,8 +32,8 @@ Next step is to validate data against the swagger.  The tricky part is getting
 references.  Worthwhile because it keeps us in the original data format.
 DONE
 
-Call the API.
-WIP
+Call the APIs.
+DONE
 
 Other tasks present themselves as we go.  Navigating json data is tedious
 without good tools so we create the tools as we go.
@@ -530,11 +548,26 @@ https://raw.githubusercontent.com/BiGCAT-UM/EnsemblOpenAPI/master/swagger.json
 - https://github.com/swagger-api/swagger-codegen  the actual code
   still compatible w/ Python 2.
 
+
+
+
 - https://stackoverflow.com/questions/61112684/how-to-subclass-a-dictionary-so-it-supports-generic-type-hints
   Interesting discussion of subclassing builtins.
 
 
+Denver Open Data.   I wonder.
+- https://dataportals.org/portal/denver
+- https://opendata-geospatialdenver.hub.arcgis.com
+Crap.  Totally non-automatible.
 
-book.   How big things get done.
+- https://opentelemetry.io/docs/languages/
 
+Walker...
+- https://www.datascienceassn.org/resources
+
+Walker's data science laws...
+http://www.datascienceassn.org/sites/default/files/Walker%27s%20Data%20Science%20Laws%20by%20Michael%20Walker%20-%20Slides.pdf
+
+
+https://cmd2.readthedocs.io/en/0.9.9/alternatives.html
 
