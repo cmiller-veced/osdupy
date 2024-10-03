@@ -1,7 +1,6 @@
-from nws_test_data import test_parameters
 import json
 
-import httpx      # similar to R data frames
+import httpx      # follow up to requests
 import pandas      # similar to R data frames
 import jsonref     # cross platform
 import jsonschema     # cross platform
@@ -14,12 +13,11 @@ from jsonschema import (     # cross platform
 from tools import (
     raw_swagger, 
     local,        # not a tool.  It is data.
-    namespacify,
     endpoint_names,
     insert_endpoint_params,
-    sample_query_params,
 )
 from some_code import schema_trans
+from test_data_nws import test_parameters, sample_query_params
 
 
 def get_component_schemas_nws():    # NWS

@@ -1,4 +1,13 @@
 
+sample_query_params = {
+    'productId': 'ZFP',
+    #        'typeId': 'TTTTTT',
+    'zoneId': 'WYZ433',
+    'stationId': 'CO100',
+    #        'locationId': 'LLLLLL',
+}
+
+
 active_alerts = {
     'good': [
         { 'area': ['WY'], 'limit':   50, },
