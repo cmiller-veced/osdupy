@@ -230,19 +230,17 @@ def insert_endpoint_params(endpoint, parameters):
     return template.render(**parameters)
 
 
-sample_query_params = {
-        'productId': 'ZFP',
-        'typeId': 'TTTTTT',
-        'zoneId': 'WYZ432',
-        'stationId': 'CO100',
-        'locationId': 'LLLLLL',
-    }
 def test_insertion():
+    sample_query_params = {
+            'typeId': 'TTTTTT',
+            'stationId': 'sid',
+            'locationId': 'LLLLLL',
+        }
     ep = '/products/types/{typeId}/{stationId}/{locationId}'
     pns = fetch_endpoint_parameter_names(ep)
     assert pns == ['typeId', 'stationId', 'locationId']
     new_ep = insert_endpoint_params(ep, sample_query_params)
-    assert new_ep == '/products/types/TTTTTT/CO100/LLLLLL'
+    assert new_ep == '/products/types/TTTTTT/sid/LLLLLL'
  
 
 ####################### ^ Insert query params ^ ########################
