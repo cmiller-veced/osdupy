@@ -82,6 +82,7 @@ from tools import recur
 from tools import delete_key
 
 
+# schema fetching
 def get_definition_schemas_petstore():
     rs = raw_swagger(local.swagger.petstore)
     with_refs = jsonref.loads(json.dumps(rs))
@@ -91,18 +92,156 @@ def get_definition_schemas_petstore():
     # The Pet schema is a good one.
     # What a Pet object should conform to.
 
+# AHA!    brainwave!!! 
+# Distinguish two distinct sorts of things to validate.
+# endpoint schema
+# parameter schema
+# An endpoint schema describes one or more parameters
 
-# TODO: MVD   minimum viable demonstration
+def get_endpoint_locations():
+    # by subtracting
+    rs = raw_swagger(local.swagger.petstore)       # 
+    top_level_keys = 'swagger info host basePath tags schemes securityDefinitions externalDocs definitions'.split()
+    ep_keys = 'summary description operationId consumes produces responses security'.split()
+    param_keys = 'required schema type deprecated'.split()
+    schema_keys = 'format maximum minimum items collectionFormat'.split()
+    all_keys = top_level_keys + ep_keys + param_keys + schema_keys
+    for key in all_keys:
+        delete_key(rs, key)
+    return rs
+def test_endpoint_locations():
+  try:
+    jdoc = get_endpoint_locations()['paths']
+    for path in jdoc:
+        for verb in jdoc[path]:
+            assert len(jdoc[path][verb]) == 1
+            assert 'parameters' in jdoc[path][verb]
+            for param in jdoc[path][verb]['parameters']:
+                assert len(param) == 2
+                assert sorted(list(param)) == ['in', 'name']
+  finally:
+    globals().update(locals())
+
+
+def get_schemas():
+    # by subtracting
+    rs = raw_swagger(local.swagger.petstore)       # 
+    with_refs = jsonref.loads(json.dumps(rs))
+    rs = with_refs
+    top_level_keys = 'swagger info host basePath tags schemes securityDefinitions externalDocs'.split()
+    ep_keys = 'operationId consumes produces responses security'.split()
+    param_keys = []
+    schema_keys = ['xml']
+    all_keys = top_level_keys + ep_keys + param_keys  + schema_keys
+    for key in all_keys:
+        delete_key(rs, key)
+    return rs
+def test_get_schemas():
+  try:
+    jdoc = get_schemas()    #['paths']
+    assert sorted(list(jdoc)) == ['definitions', 'paths']
+    jd = jdoc['definitions']
+    jp = jdoc['paths']
+    assert list(jd) == ['ApiResponse', 'Category', 'Pet', 'Tag', 'Order', 'User']
+    assert list(jp) == ['/pet/{petId}/uploadImage', '/pet', '/pet/findByStatus', '/pet/findByTags', '/pet/{petId}', '/store/inventory', '/store/order', '/store/order/{orderId}', '/user/createWithList', '/user/{username}', '/user/login', '/user/logout', '/user/createWithArray', '/user']
+  finally:
+    globals().update(locals())
+
+
+
+
+def endpoint_schema(endpoint):
+    return
+def parameter_schema(parameter):
+    return
+
+# TODO: and then we have multiple sources of schemas.
+# definitions section
+# and then the indidguial endponts
+
+def parameter_list_to_schema(parameter_list):
+  try:
+    d = {}
+    for pdict in parameter_list:
+        td = {}
+        if 'type' in pdict:
+            td['type'] = pdict['type']
+        if 'format' in pdict:
+            td['format'] = pdict['format']
+        d[pdict['name']] = td
+    d['type'] = 'object'
+    d['required'] = [pd['name'] for pd in parameter_list if pd['required']]
+    return d
+  finally:
+    globals().update(locals())
+def test_parameter_list_to_schema():
+  try:
+    s = parameter_list_to_schema(es['parameters'])
+    validator = Draft7Validator(s, format_checker=FormatChecker())
+    x = {
+        'petId': 1234,
+    }
+    assert validator.is_valid(x)
+
+  finally:
+    globals().update(locals())
+
+
+
+def get_parameter_schemas():
+    return
+
+# schema fetching
+def endpoint_schema(endpoint, verb):
+    """Pull schema with some adjustments for internal inconsistency within the
+    OpenAPI doc.
+    AFII: adjust for internal inconsistency
+    """
+    jdoc = get_schemas()['paths']
+    defs = get_schemas()['definitions']
+    for ep in jdoc:
+        for v in jdoc[ep]:
+            if (endpoint, verb) == (ep, v):
+                s = jdoc[endpoint][verb]
+
+                # AFII
+                if len(s['parameters']) == 1:
+                    p = s['parameters'][0]
+                    if p['in'] == 'body':
+                        assert 'schema' in p
+                        s = p['schema']
+    # AFII
+    if 'parameters' in s and len(s['parameters']) > 1:
+        s = parameter_list_to_schema(s['parameters'])
+    if 'parameters' in s and len(s['parameters']) == 1:
+        s = s['parameters'][0]
+    return s
+
+
+def test_endpoint_schema_validation():
+    """Here is the way to test validation.
+    """
+    jdoc = get_schemas()['paths']
+    for endpoint in jdoc:
+        for verb in jdoc[endpoint]:
+            es = endpoint_schema(endpoint, verb)
+            print(endpoint, verb)
+            print(es)
+            print()
+            validator = Draft7Validator(es, format_checker=FormatChecker())
+            samples = test_parameters[endpoint][verb]
+            for thing in samples['good']:
+                assert validator.is_valid(thing)
+            for thing in samples['bad']:
+                assert not validator.is_valid(thing)
+
+
 # TODO: MVD   minimum viable demonstration
 # TODO: MVD   minimum viable demonstration
 # TODO: MVD   minimum viable demonstration
 # TODO: diff between two json docs.
-
-
-ps = get_definition_schemas_petstore()['Pet']
-po = deepcopy(ps)
-delete_key(ps, 'xml')
-
+# TODO: MVI   minimum viable implementation
+# TODO: MVI   minimum viable implementation
 
 
 def petstore_endpoint_verbs(endpoint):
@@ -117,7 +256,6 @@ def petstore_endpoint_verb_details(endpoint, verb):
     with_refs = jsonref.loads(json.dumps(rs))
     thing = with_refs['paths'][endpoint][verb]
     return thing
-
 
 
 # TODO: up until now I have been validating all parameters together.
@@ -184,10 +322,9 @@ sample_data = {
     'tags': ['foo']
 }
 
-status_schema = {'name': 'status', 'in': 'query', 'description': 'Status values that need to be considered for filter', 'required': True, 'type': 'array', 'items': {'type': 'string', 'enum': ['available', 'pending', 'sold'], 'default': 'available'}, 'collectionFormat': 'multi'}
 
 
-
+# schema fetching
 
 # TODO: note petstore is the only current api with multiple verbs per endpoint.
 def petstore_investigate_endpoints():
@@ -196,7 +333,6 @@ def petstore_investigate_endpoints():
     fu = set()
     # inspect the swagger, carefully.
     rs = raw_swagger(local.swagger.petstore)       # 
-    status_schema = rs['paths']['/pet/findByStatus']['get']['parameters'][0]
     for endpoint in endpoint_names(rs):
         print(endpoint)
         verbs = petstore_endpoint_verbs(endpoint)
@@ -212,6 +348,17 @@ def petstore_investigate_endpoints():
                 delete_key(details, 'tags')
             for pram in details['parameters']:
                 pname = pram['name']
+                schema = pram['schema'] if 'schema' in pram else pram
+                # compensate for bad info in swagger file...
+                if pname == 'status':
+                    schema = rs['paths']['/pet/findByStatus']['get']['parameters'][0]
+                if pname == 'file':
+                    schema['type'] = 'string'
+                dv = Draft7Validator(schema, format_checker=FormatChecker())
+                sd = sample_data[pname]
+
+
+
                 if 'schema' in pram:
                     schema = pram['schema']
                 has_schema = True if 'schema' in pram else False
@@ -222,10 +369,13 @@ def petstore_investigate_endpoints():
                 if not has_schema:
                     schemaless_params.add(pname)
                     print('                   ', pram)
+
+                    # compensate for bad info in swagger file...
                     if pname == 'status':
-                        pram = status_schema
+                        pram = rs['paths']['/pet/findByStatus']['get']['parameters'][0]
                     if pname == 'file':
                         pram['type'] = 'string'
+
                     dv = Draft7Validator(pram, format_checker=FormatChecker())
                     sd = sample_data[pname]
                     try:

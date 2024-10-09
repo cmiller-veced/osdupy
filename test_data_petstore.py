@@ -1,6 +1,5 @@
 
-
-# valid UniProtKB accession
+# 
 
 petIds = {
     'good': [1234, '1234', ],
@@ -75,6 +74,22 @@ from_postman_online = {
   "status": "sold"
 }
 
+generic_bad = ['' , 0, 'foo', {}] 
+generic_bad = ['' , 0, 'foo'] 
+
+uploadImage_post = {
+    'good': [
+      {
+       'petId': 1234,
+       'additionalMetadata': 'aaaaaaa',
+       'file': 'ffffff',
+      }, 
+      {
+       'petId': 1234,
+      }, 
+    ],
+    'bad': generic_bad,
+}
 
 Pet_post = {
     'good': [
@@ -88,22 +103,43 @@ Pet_post = {
       }, 
       from_postman_online,
     ],
-    'bad': ['' , 0, 'foo', {}],
+    'bad': generic_bad
 }
 Pet_put = {
     'good': [
       {
-       'id': 1234,
+       'photoUrls': [],
        'name': 'buff',
       }, 
+      {
+       'photoUrls': [],
+       'name': 'buff',
+       'status': 'pending',
+      }, 
+
     ],
-    'bad': ['' , 0, 'foo', {}],
+    'bad': generic_bad
+}
+
+Pet_findByStatus = {
+    'good': [
+      ['sold', ], 
+      ['sold', 'pending'], 
+    ],
+    'bad': generic_bad
+}
+Pet_findByTags = {
+    'good': [
+      ['foo', ], 
+      ['foo', 'bar'], 
+    ],
+    'bad': generic_bad
 }
 
 
 petId_get = {
-    'good': [1234, '1234', 58806647],
-    'bad': ['' , 0, 'foo'],
+    'good': [1234, 0, 58806647],
+    'bad': ['', 'foo'],
 }
 
 petId_post = {
@@ -117,13 +153,95 @@ petId_post = {
     'bad': ['' , 0, 'foo', {}],
 }
 
+
 petId_delete = {
     'good': [ {
          'petId': 1234,
          'api_key': api_key,
         }, 
     ],
-    'bad': ['' , 0, 'foo', {}],
+    'bad': generic_bad,
+}
+
+store_inventory = {
+    'good': [],
+    'bad': [],
+}
+
+store_order_post = {
+    'good': [ {
+         'id': 4321,
+         'petId': 1234,
+        }, 
+        {
+         'petId': 1234,
+        }, 
+        {},
+    ],
+    'bad': generic_bad,
+}
+store_order_get = {
+    'good': [ 1, 9, ],
+    'bad': [0, 99, 'x']
+}
+store_order_delete = {
+    'good': [ 1, 9],
+    'bad': [0, 'x']
+}
+
+user_delete = {
+    'good': [ {
+         'username': 'Auser',
+        }, 
+    ],
+    'bad': [{}],
+}
+
+user_login_get = {
+    'good': [ {
+         'password': 'xxxx',
+         'username': 'Auser',
+        }, 
+    ],
+    'bad': [{}],
+}
+
+user_logout_get = {
+    'good': [], 
+    'bad': [],
+}
+
+user_with_array_post = {
+    'good': [ [{
+         'id': 1234,
+         'username': 'Auser',
+        }], 
+        [{}],
+    ],
+    'bad': generic_bad,
+}
+
+user_get = {
+    'good': [ 'user1', 'bar' ],
+    'bad': [0],
+}
+user_put = {
+    'good': [ {
+         'username': 'user1',
+         'body': {},
+        }, 
+    ],
+    'bad': generic_bad,
+}
+
+user_post = {
+    'good': [ {
+         'id': 1234,
+         'username': 'Auser',
+        }, 
+        {},
+    ],
+    'bad': generic_bad,
 }
 
 
@@ -131,25 +249,62 @@ petId_delete = {
 # TODO: postman petstore
 # TODO: postman nws
 # etc
-# etc
 
 
 test_parameters = {
-    #    '/pet/{petId}/uploadImage': proteins_accession ,
+    '/pet/{petId}/uploadImage': {
+        'post': uploadImage_post ,
+    },
     '/pet': {
         'post': Pet_post ,
         'put': Pet_put,
     },
+    '/pet/findByStatus': {
+        'get': Pet_findByStatus,
+    },
+    '/pet/findByTags': {
+        'get': Pet_findByTags,
+    },
+
     '/pet/{petId}': {
         'get': petId_get,
         'post': petId_post,
         'delete': petId_delete,
     },
 
-    #    '/pet/findByStatus': proteome ,
-    #    '/pet/findByTags': proteome ,
-} 
+    '/store/inventory': {
+        'get': store_inventory,
+    },
+    '/store/order': {
+        'post': store_order_post,
+    },
+    '/store/order/{orderId}': {
+        'get': store_order_get,
+        'delete': store_order_delete,
+    },
 
+    '/user/login': {
+        'get': user_login_get 
+    },
+    '/user/logout': {
+        'get': user_logout_get 
+    },
+    '/user/createWithArray': {
+        'post': user_with_array_post,
+    },
+    '/user/createWithList': {
+        'post': user_with_array_post,
+    },
+    '/user/{username}': {
+        'get': user_get ,
+        'put': user_put ,
+        'delete': user_get ,
+    },
+
+    '/user': {
+        'post': user_post ,
+    },
+} 
 
 
 '''
@@ -164,18 +319,3 @@ and then there was the Neptune database.
 Gremlin queries translated to the above, one-trick.
 
 '''
-
-# good_ones = [
-#     {"name": 'kittyX', 'photoUrls': []},
-#     {"name": 'kittyX', 'photoUrls': [], 'category': {}},
-#     {"name": 'kittyX', 'photoUrls': [], 'status': 'sold'},
-#     {"name": 'kittyX', 'photoUrls': [], 'category': {}, 'status': 'sold'},
-# ]
-# bad_ones = [
-#     {},
-#     {"name": 'kittyX'},
-#     {"name": 'kittyX', 'photoUrls': [], 'category': ''}, 
-#     {"name": 'kittyX', 'photoUrls': [], 'status': ''},
-# ]
-
-
