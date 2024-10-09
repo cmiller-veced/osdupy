@@ -2,7 +2,6 @@ import json
 import os
 from functools import singledispatch  # for heterogeneous recursive data structure
 from types import SimpleNamespace
-from pprint import pprint
 
 from jinja2 import Environment, PackageLoader, select_autoescape     # cross platform
 
@@ -11,13 +10,13 @@ pet_swagger = 'https://petstore.swagger.io/v2/swagger.json'
 
 class local:       # our data.   (vs their data (in swagger))
     class swagger:
-        pet = '~/local/petstore/swagger.json'
+        petstore = '~/local/petstore/swagger.json'
         nws = '~/local/nws/openapi.json'
         protein = '~/local/ebi/protein_openapi.json'
         libre =  '~/local/libretranslate/openapi.json'
         jira =  '~/local/jira/openapi.json'
     class api_base:
-        pet = 'https://petstore.swagger.io/v2'
+        petstore = 'https://petstore.swagger.io/v2'
         nws = 'https://api.weather.gov'
         protein = 'https://www.ebi.ac.uk/proteins/api'
         libre = 'https://libretranslate.com'     # ????
@@ -90,27 +89,74 @@ def validate_jsonschema_with_refs():
 
 # Working with json data #
 # ######################################################################## #
+# TODO: change filename to jsontools.py ????
+# NO.  Probably not because some of it is more general than json docs.
 
+
+identity_func = lambda x:x
 
 # Recursion over a heterogeneous data structure.
 @singledispatch
-def recur(arg, indent=0):
+def recur(arg, fun=identity_func):
+    return fun(arg)
+
+@recur.register
+def _(arg: list, fun=identity_func):
+    return [recur(fun(thing)) for thing in arg]
+
+@recur.register
+def _(arg: dict, fun=identity_func):
+    #    fun(arg)    fails disastrously
+    return {key:recur(fun(arg[key])) for key in arg}
+    # TODO: fooeey!
+    # This fails for the problem of deleting dict keys.
+    # but...
+
+@singledispatch
+def delete_key(arg, key):
+    return arg
+
+@delete_key.register
+def _(arg: dict, key):
+    try:
+        arg.pop(key)   # NOTE  mutates input
+    except KeyError:
+        pass
+    return {k: delete_key(arg[k], key) for k in arg}
+
+@delete_key.register
+def _(arg: list, key):
+    return [delete_key(thing, key) for thing in arg]
+
+def test_delete_key():
+    test_d = dict(foo=2, xml=3)
+    dt = delete_key(test_d, 'xml')
+    assert dt == test_d
+    assert dt is not test_d
+
+
+
+@singledispatch
+def recur1(arg, indent=0):
     print(f'{" "*indent}{arg}')
 
-@recur.register
+@recur1.register
 def _(arg: list, indent=0):
     for thing in arg:
-        recur(thing, indent=indent+1)
+        recur1(thing, indent=indent+1)
 
-@recur.register
+@recur1.register
 def _(arg: dict, indent=0):
     for key in arg:
-        recur(key, indent=indent+1)
-        recur(arg[key], indent=indent+1)
+        recur1(key, indent=indent+1)
+        recur1(arg[key], indent=indent+1)
         print()
 # TODO: This is good but extremely limited.
 # It does the recursion correctly but simply prints out stuff in a totally rigid
 # way.
+
+
+
 
 
 # fetch from deeply nested dicts.
@@ -145,7 +191,7 @@ def test_recursion():
         print(key, type(rs[key]))
         print(rs[key])
         print()
-    recur(rs)
+    recur1(rs)
 
   finally:
     globals().update(locals())
