@@ -65,13 +65,9 @@ ep = '/pet/findByStatus'
 url = petstore_api_base + ep
 params = {'status': 'available'}
 
-rp = httpx.get(url, params=params)  # 
-assert rp.status_code == 200
-
-def f():
-    request = httpx.Request("GET", "https://example.com")
-    with httpx.Client() as client:
-        response = client.send(request)
+if 0:
+    rp = httpx.get(url, params=params)  # 
+    assert rp.status_code == 200
 
 
 # 
@@ -150,17 +146,14 @@ def test_get_schemas():
 
 
 
-def endpoint_schema(endpoint):
-    return
-def parameter_schema(parameter):
-    return
+#def endpoint_schema(endpoint): return
+#def parameter_schema(parameter): return
 
 # TODO: and then we have multiple sources of schemas.
 # definitions section
-# and then the indidguial endponts
+# and then the individual endponts
 
 def parameter_list_to_schema(parameter_list):
-  try:
     d = {}
     for pdict in parameter_list:
         td = {}
@@ -168,28 +161,149 @@ def parameter_list_to_schema(parameter_list):
             td['type'] = pdict['type']
         if 'format' in pdict:
             td['format'] = pdict['format']
+        if 'in' in pdict:
+            td['in'] = pdict['in']
         d[pdict['name']] = td
     d['type'] = 'object'
     d['required'] = [pd['name'] for pd in parameter_list if pd['required']]
     return d
-  finally:
-    globals().update(locals())
+
+
 def test_parameter_list_to_schema():
-  try:
     s = parameter_list_to_schema(es['parameters'])
     validator = Draft7Validator(s, format_checker=FormatChecker())
-    x = {
-        'petId': 1234,
-    }
+    x = { 'petId': 1234, }
     assert validator.is_valid(x)
-
-  finally:
-    globals().update(locals())
-
 
 
 def get_parameter_schemas():
     return
+
+# 3 Fs; fighting, fornicating, ? 
+# TODO: create a dinky data structure to hold the data on its way into an API
+# call.
+# It will see to it that the parameters get handled in the right way.
+# body
+# headers
+# path
+# etc.
+
+# working
+if 1:      # insert info into request
+    # TODO: can we have multiple inheritance from subclasses of dict?
+    # NP, of course.
+    import types
+    from demo_class import validated_for_dict
+    from types import SimpleNamespace
+    import json
+    from tools import namespacify
+    import pytest
+
+
+    class DotDict(dict):
+        """
+        >>> d = DotDict(foo=2)
+        >>> assert d['foo'] == d.foo
+        """
+        __getattr__ = dict.__getitem__
+        __setattr__ = dict.__setitem__
+        __delattr__ = dict.__delitem__
+
+
+    schema = dict(
+        type='object',
+        additionalProperties=False,
+        #    required = ['httpx_request', 'endpoint_info'],
+        required = ['endpoint_info'],
+        properties=dict(
+            #        httpx_request=dict( type='string',),
+            # Here we have a shortcoming of jsonschema.
+            # I want to specify that httpx_request must be httpx.Request object but
+            # there's no way to do that in jsonschema.
+            # TODO: maybe sometime, redo this validator in Pydantic so we can
+            # specify httpx.Request.
+            # But otoh, if something else ever gets passed in it will be really easy
+            # to track down.
+            httpx_request=dict(),
+            endpoint_info=dict(
+                required = ['endpoint', 'verb'],
+                type='object',
+                endpoint=dict( type='string',),
+                verb=dict( type='string',),
+                ),
+            parameters=dict(
+                type='object',
+                body=dict( type='object',),
+                headers=dict( type='object',),
+                path=dict( type='object',),
+                query=dict( type='array',),
+            )
+        )
+    )
+
+
+    class Combined(validated_for_dict(schema)):
+        def insert_to_request(self, httpx_request: httpx.Request):
+            """
+            or is it more like,  make_the_request?
+            NO.
+            Maybe.
+            We need the endpoint here to insert into.
+            base_url not required.
+            """
+            request = httpx_request
+            parameters = self['parameters']
+            info = self['endpoint_info']
+            # TODO: put them together.
+            return 'xxx'
+     
+    dx = dict(parameters=dict(query=[]), httpx_request='foof')  # OK
+    dx = dict(parameters=dict(query=[]), httpx_request='foof')  # OK
+    dx = dict(
+        parameters=dict(query=[]), 
+        httpx_request=[],
+        endpoint_info=dict(
+            endpoint='/foo/bar/{bat}',
+            verb='post',
+        ),
+    )  # OK
+
+    dbad = dict(
+        parameters=dict(query=[]), 
+        httpx_request=[],
+        endpoint_info=dict(
+            endpoint='/foo/bar/{bat}',
+            terb='post',
+        ),
+    )  # OK
+    dbad = dict(params=dict(query=[]))  # OK
+    # There are tradeoffs for the two approaches; DotDict vs namespacify.
+    # I prefer nested DotDict except for interactive exploration with tab-tab.
+    # yep.
+    # This is the best.
+    # behaves identical to dict except for the dot notation.
+    #
+    # This namespacing the nested dict project highlights a shortcoming of using
+    # classes.  With classes if we want foo.bar.bat.rat.cat, each dot is another
+    # class definition.
+    ok = Combined(dx)
+    with pytest.raises(jsonschema.exceptions.ValidationError):
+        db = Combined(dbad)
+    okns = json.loads(json.dumps(ok), object_hook=DotDict)
+    assert okns.parameters == {'query': []}
+    assert okns.parameters.query == []
+    assert okns.endpoint_info.verb == 'post'
+    with pytest.raises(KeyError):
+        ick = okns.insert_to_request()
+    ick = ok.insert_to_request('req')
+
+
+    # TODO: insert params into httpx.Request ????
+    def f():
+        request = httpx.Request("GET", "https://example.com")
+        with httpx.Client() as client:
+            response = client.send(request)
+
 
 # schema fetching
 def endpoint_schema(endpoint, verb):
@@ -213,12 +327,18 @@ def endpoint_schema(endpoint, verb):
     # AFII
     if 'parameters' in s and len(s['parameters']) > 1:
         s = parameter_list_to_schema(s['parameters'])
+        print('yoohoo')
+        print('yoohoo')
+        print('yoohoo')
+        print('yoohoo')
     if 'parameters' in s and len(s['parameters']) == 1:
         s = s['parameters'][0]
     return s
 
 
+# working
 def test_endpoint_schema_validation():
+  try:
     """Here is the way to test validation.
     """
     jdoc = get_schemas()['paths']
@@ -227,13 +347,85 @@ def test_endpoint_schema_validation():
             es = endpoint_schema(endpoint, verb)
             print(endpoint, verb)
             print(es)
-            print()
             validator = Draft7Validator(es, format_checker=FormatChecker())
             samples = test_parameters[endpoint][verb]
             for thing in samples['good']:
                 assert validator.is_valid(thing)
-            for thing in samples['bad']:
+                if thing:
+                    gthing = thing
+            for thing in samples['bad']: 
                 assert not validator.is_valid(thing)
+            # TODO: call the endpoint with the params
+            # need other info from swagger.
+            other_info = endpoint_info(endpoint, verb)
+            di = dict(
+                endpoint_info=dict(endpoint=endpoint, verb=verb),
+                parameters=dict(
+                    body={},
+                    headers={},
+                    path={},
+                    query={},
+                ),
+                #                foo=2,
+            )
+            c = Combined(di)
+
+            # exp
+            if 'properties' in es:
+                for prop in es['properties']:
+                    assert 'in' not in prop
+            if 'in' in es:
+                print('x'*66)
+                di['parameters'][es['in']] = True
+                print(es['in'])
+                print('x'*66)
+            if verb in ['post', 'put']:
+                di['parameters']['body'] = True
+            print('   ', di['parameters'])
+            print()
+
+            kw = {}
+            url = "https://example.com"
+            if di['parameters']['body'] == True:
+                kw['data'] = gthing    # give the Request a body
+
+            request = httpx.Request(verb, url, **kw)
+    with httpx.Client() as client:
+        response = client.send(request)
+            
+
+  finally:
+    globals().update(locals())
+    """
+        properties=dict(
+            endpoint_info=dict(
+                required = ['endpoint', 'verb'],
+                type='object',
+                endpoint=dict( type='string',),
+                verb=dict( type='string',),
+                ),
+            parameters=dict(
+                type='object',
+                body=dict( type='object',),
+                headers=dict( type='object',),
+                path=dict( type='object',),
+                query=dict( type='array',),
+    """
+
+
+
+
+def endpoint_info(endpoint, verb):
+  try:
+    """Pull endpoint info relevant for the API call.
+    """
+    jdoc = get_schemas()['paths']
+    for ep in jdoc:
+        for v in jdoc[ep]:
+            if (endpoint, verb) == (ep, v):
+                s = jdoc[endpoint][verb]
+  finally:
+    globals().update(locals())
 
 
 # TODO: MVD   minimum viable demonstration
