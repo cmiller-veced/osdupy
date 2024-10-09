@@ -116,6 +116,14 @@ def validated_for_dict(typ, schema):
             super().__init__()
             self.update(*args, **kwargs)
     return Inner
+def validated_for_dict(schema):
+    class Inner(dict):
+        def __init__(self, *args, **kwargs):
+            Draft7Validator(schema).validate(dict(*args, **kwargs))
+            super().__init__()
+            self.update(*args, **kwargs)
+    return Inner
+
 
 
 # general
