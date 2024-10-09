@@ -1,4 +1,5 @@
 import json
+from functools import lru_cache
 
 import httpx      # follow up to requests
 import pandas      # similar to R data frames
@@ -94,10 +95,12 @@ def nws_call(endpoint, params=None):
 # NWS data ##################################################################
 
 
+@lru_cache
 def alert_types():
     return nws_call('/alerts/types')['eventTypes']
 
 
+@lru_cache
 def stations():
     js = nws_call('/stations')
     counties = set()                           # thing of interest
@@ -115,6 +118,7 @@ def stations():
     return ids
 
 
+@lru_cache
 def radar_stations():
     js = nws_call('/radar/stations')
     typ = [d['properties']['@type'] for d in js['features']]
@@ -126,6 +130,7 @@ def radar_stations():
     return [d['properties']['id'] for d in js['features']]
 
 
+@lru_cache
 def zone_ids():
     js = nws_call('/zones')
     atypes = [d['properties']['@type'] for d in js['features']]
@@ -138,6 +143,7 @@ def zone_ids():
     return sorted(list(set(ids)))
 
 
+@lru_cache
 def product_codes():
     js = nws_call('/products/types')
     context = js['@context']
@@ -158,6 +164,21 @@ class NWS:
     # operate on instance data.
     # Thus they are really a different animal than the usual image of methods as
     # operating on client data.
+    # NO
+    #
+    zone_ids = classmethod(zone_ids) 
+    # TODO: but wait!!!!!!!
+    # both defs of zone_ids give an error...
+    # Traceback (most recent call last):
+    # File "<stdin>", line 1, in <module>
+    # TypeError: zone_ids() takes 0 positional arguments but 1 was given
+    # thus, zone_ids MUST be defined as...
+    @classmethod
+    def zone_ids(self):
+        return zone_ids()
+    # which is quite verbose.
+    # The way product_codes operates seems better.
+
 nws = NWS()
 
 # ^ NWS data ^ ###############################################################
