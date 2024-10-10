@@ -191,7 +191,7 @@ store_order_delete = {
 
 user_delete = {
     'good': [ {
-         'username': 'Auser',
+         'username': 'user1',
         }, 
     ],
     'bad': [{}],
@@ -200,7 +200,7 @@ user_delete = {
 user_login_get = {
     'good': [ {
          'password': 'xxxx',
-         'username': 'Auser',
+         'username': 'user1',
         }, 
     ],
     'bad': [{}],
@@ -214,7 +214,7 @@ user_logout_get = {
 user_with_array_post = {
     'good': [ [{
          'id': 1234,
-         'username': 'Auser',
+         'username': 'user1',
         }], 
         [{}],
     ],
@@ -236,8 +236,8 @@ user_put = {
 
 user_post = {
     'good': [ {
-         'id': 1234,
-         'username': 'Auser',
+         'id': 2314345670987,
+         'username': 'user2314345670987',
         }, 
         {},
     ],
