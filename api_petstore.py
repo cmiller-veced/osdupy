@@ -12,70 +12,31 @@ from tools import (
     local,        # not a tool.  It is data.
     endpoint_names,
     insert_endpoint_params,
+    recur, delete_key, DotDict, namespacify,
 )
-from some_code import schema_trans
+#from some_code import schema_trans
 
-pet_swagger_local = '~/local/petstore/swagger.json'
-
-#good_schema = with_refs['definitions']['Pet']  # The behavior we want
-
-def validate_jsonschema_with_refs():
-    good_ones = [
-        {"name": 'kittyX', 'photoUrls': []},
-        {"name": 'kittyX', 'photoUrls': [], 'category': {}},
-        {"name": 'kittyX', 'photoUrls': [], 'status': 'sold'},
-        {"name": 'kittyX', 'photoUrls': [], 'category': {}, 'status': 'sold'},
-    ]
-    bad_ones = [
-        {},
-        {"name": 'kittyX'},
-        {"name": 'kittyX', 'photoUrls': [], 'category': ''}, 
-        {"name": 'kittyX', 'photoUrls': [], 'status': ''},
-    ]
-    rs = raw_swagger(pet_swagger_local)
-    with_refs = jsonref.loads(json.dumps(rs))
-    good_schema = with_refs['definitions']['Pet']  # The behavior we want
-    bad_schemas = [{}, dict(foo=2)]   # jsonschema allows any dict to be a schema.
-
-    for ob in good_ones:
-        validate(instance=ob, schema=good_schema)
-        print('ok good', ob)
-
-    for ob in bad_ones:
-        try:
-            validate(instance=ob, schema=good_schema)
-        except jsonschema.exceptions.ValidationError:
-            print('ok bad', ob)
-
-    for schema in bad_schemas:
-        validate(instance={}, schema=schema)
-        print('crap!')
-
-    globals().update(locals())
-
-
-def test_all():
-    validate_jsonschema_with_refs()
-
-
-
-header = {'accept: application/json'}
-petstore_api_base = 'https://petstore.swagger.io/v2'
-ep = '/pet/findByStatus'
-url = petstore_api_base + ep
-params = {'status': 'available'}
-
-if 0:
-    rp = httpx.get(url, params=params)  # 
-    assert rp.status_code == 200
-
-
-# 
-###########################################
 from copy import deepcopy
 from pprint import pprint
-from tools import recur
-from tools import delete_key
+from demo_class import validated_for_dict
+import types
+from types import SimpleNamespace
+import pytest
+
+header = {'accept: application/json'}
+sample_data = {
+    'username': 'merlin', 
+    'file': 'foofile', 
+    'api_key': 'foobar', 
+    'additionalMetadata': 'foof', 
+    'name': 'yourName', 
+#    'status': 'sold', 
+    'status': ['sold'], 
+    'password': 'xxxxx', 
+    'petId': 99, 
+    'orderId': 9, 
+    'tags': ['foo']
+}
 
 
 # schema fetching
@@ -88,11 +49,6 @@ def get_definition_schemas_petstore():
     # The Pet schema is a good one.
     # What a Pet object should conform to.
 
-# AHA!    brainwave!!! 
-# Distinguish two distinct sorts of things to validate.
-# endpoint schema
-# parameter schema
-# An endpoint schema describes one or more parameters
 
 def get_endpoint_locations():
     # by subtracting
@@ -105,6 +61,7 @@ def get_endpoint_locations():
     for key in all_keys:
         delete_key(rs, key)
     return rs
+
 def test_endpoint_locations():
   try:
     jdoc = get_endpoint_locations()['paths']
@@ -144,15 +101,6 @@ def test_get_schemas():
     globals().update(locals())
 
 
-
-
-#def endpoint_schema(endpoint): return
-#def parameter_schema(parameter): return
-
-# TODO: and then we have multiple sources of schemas.
-# definitions section
-# and then the individual endponts
-
 def parameter_list_to_schema(parameter_list):
     d = {}
     for pdict in parameter_list:
@@ -176,41 +124,11 @@ def test_parameter_list_to_schema():
     assert validator.is_valid(x)
 
 
-def get_parameter_schemas():
-    return
-
-# 3 Fs; fighting, fornicating, ? 
-# TODO: create a dinky data structure to hold the data on its way into an API
-# call.
-# It will see to it that the parameters get handled in the right way.
-# body
-# headers
-# path
-# etc.
+#def get_parameter_schemas(): return
 
 # working
 if 1:      # insert info into request
-    # TODO: can we have multiple inheritance from subclasses of dict?
-    # NP, of course.
-    import types
-    from demo_class import validated_for_dict
-    from types import SimpleNamespace
-    import json
-    from tools import namespacify
-    import pytest
-
-
-    class DotDict(dict):
-        """
-        >>> d = DotDict(foo=2)
-        >>> assert d['foo'] == d.foo
-        """
-        __getattr__ = dict.__getitem__
-        __setattr__ = dict.__setitem__
-        __delattr__ = dict.__delitem__
-
-
-    schema = dict(
+    interface_schema = dict(
         type='object',
         additionalProperties=False,
         #    required = ['httpx_request', 'endpoint_info'],
@@ -242,14 +160,9 @@ if 1:      # insert info into request
     )
 
 
-    class Combined(validated_for_dict(schema)):
+    class Combined(validated_for_dict(interface_schema)):
         def insert_to_request(self, httpx_request: httpx.Request):
             """
-            or is it more like,  make_the_request?
-            NO.
-            Maybe.
-            We need the endpoint here to insert into.
-            base_url not required.
             """
             request = httpx_request
             parameters = self['parameters']
@@ -257,7 +170,6 @@ if 1:      # insert info into request
             # TODO: put them together.
             return 'xxx'
      
-    dx = dict(parameters=dict(query=[]), httpx_request='foof')  # OK
     dx = dict(parameters=dict(query=[]), httpx_request='foof')  # OK
     dx = dict(
         parameters=dict(query=[]), 
@@ -267,25 +179,9 @@ if 1:      # insert info into request
             verb='post',
         ),
     )  # OK
-
-    dbad = dict(
-        parameters=dict(query=[]), 
-        httpx_request=[],
-        endpoint_info=dict(
-            endpoint='/foo/bar/{bat}',
-            terb='post',
-        ),
-    )  # OK
     dbad = dict(params=dict(query=[]))  # OK
-    # There are tradeoffs for the two approaches; DotDict vs namespacify.
-    # I prefer nested DotDict except for interactive exploration with tab-tab.
-    # yep.
-    # This is the best.
-    # behaves identical to dict except for the dot notation.
-    #
-    # This namespacing the nested dict project highlights a shortcoming of using
-    # classes.  With classes if we want foo.bar.bat.rat.cat, each dot is another
-    # class definition.
+    ##############
+    ##############
     ok = Combined(dx)
     with pytest.raises(jsonschema.exceptions.ValidationError):
         db = Combined(dbad)
@@ -296,13 +192,6 @@ if 1:      # insert info into request
     with pytest.raises(KeyError):
         ick = okns.insert_to_request()
     ick = ok.insert_to_request('req')
-
-
-    # TODO: insert params into httpx.Request ????
-    def f():
-        request = httpx.Request("GET", "https://example.com")
-        with httpx.Client() as client:
-            response = client.send(request)
 
 
 # schema fetching
@@ -325,21 +214,21 @@ def endpoint_schema(endpoint, verb):
                         assert 'schema' in p
                         s = p['schema']
     # AFII
-    if 'parameters' in s and len(s['parameters']) > 1:
-        s = parameter_list_to_schema(s['parameters'])
-        print('yoohoo')
-        print('yoohoo')
-        print('yoohoo')
-        print('yoohoo')
-    if 'parameters' in s and len(s['parameters']) == 1:
-        s = s['parameters'][0]
+    if 'parameters' in s:
+        if len(s['parameters']) > 1:
+            s = parameter_list_to_schema(s['parameters'])
+            print('yoohoo')
+            print('yoohoo')
+            print('yoohoo')
+        elif len(s['parameters']) == 1:
+            s = s['parameters'][0]
     return s
 
 
 # working
 def test_endpoint_schema_validation():
   try:
-    """Here is the way to test validation.
+    """
     """
     jdoc = get_schemas()['paths']
     for endpoint in jdoc:
@@ -385,35 +274,45 @@ def test_endpoint_schema_validation():
             print()
 
             kw = {}
-            url = "https://example.com"
+            url = local.api_base.petstore + endpoint
             if di['parameters']['body'] == True:
                 kw['data'] = gthing    # give the Request a body
 
-            request = httpx.Request(verb, url, **kw)
+    header = {'Content-Type: application/json'}   # 415 Unsupported Media Type
+    header = {'Content-Type': 'application/json'}   # 400 bad input
+    userId = 2314345670987
+    username = f'user{userId}'
     with httpx.Client() as client:
-        response = client.send(request)
-            
-
+        if (endpoint, verb) == ('/user', 'post'):
+            kd = {'id': userId, 'username': username}
+            request = httpx.Request(verb, url, headers=header, json=kd)   # 200 OK
+            response = client.send(request)
+        verb = 'get'
+        endpoint = f'/user/{username}'
+        url = local.api_base.petstore + endpoint
+        urequest = httpx.Request(verb, url)
+        uresponse = client.send(urequest)   # 200 OK
   finally:
     globals().update(locals())
-    """
-        properties=dict(
-            endpoint_info=dict(
-                required = ['endpoint', 'verb'],
-                type='object',
-                endpoint=dict( type='string',),
-                verb=dict( type='string',),
-                ),
-            parameters=dict(
-                type='object',
-                body=dict( type='object',),
-                headers=dict( type='object',),
-                path=dict( type='object',),
-                query=dict( type='array',),
-    """
 
-
-
+# goal:  Make it work like this...
+def petstore_validate_and_call1():
+  try:
+    with httpx.Client(base_url=local.api_base.petstore) as client:   # 
+        for endpoint in endpoint_names(rs):
+            for verb in endpoint:
+                for params in test_data['good']:
+                    assert params_ok
+                    load_params
+                    send_params
+                    assert it_worked
+                for params in test_data['bad']:
+                    assert params_NOT_ok
+                    load_params
+                    send_params
+                    assert NOT_it_worked
+  finally:
+    globals().update(locals())
 
 def endpoint_info(endpoint, verb):
   try:
@@ -426,14 +325,6 @@ def endpoint_info(endpoint, verb):
                 s = jdoc[endpoint][verb]
   finally:
     globals().update(locals())
-
-
-# TODO: MVD   minimum viable demonstration
-# TODO: MVD   minimum viable demonstration
-# TODO: MVD   minimum viable demonstration
-# TODO: diff between two json docs.
-# TODO: MVI   minimum viable implementation
-# TODO: MVI   minimum viable implementation
 
 
 def petstore_endpoint_verbs(endpoint):
@@ -458,67 +349,50 @@ def petstore_endpoint_verb_details(endpoint, verb):
 # A.  The petstore API shows that parameters definitely need to be inserted
 # individually into the right place.  So maybe it makes sense to validate
 # individually but maybe not.
-def schema_trans(vinfo): pass
-def schema_trans(vinfo, verb):
-  try:
-    ins = defaultdict(set)
-    in_locations = 'body path formData query header'.split()   # data re swagger
-    for d in vinfo:   # tmp
-        ins[d['in']].add(d['name'])
-        assert d['in'] in in_locations
-        assert 'in' in d
-#        assert 'schema' in d
-    if verb == 'post':
-        assert all(d['in']=='body' for d in vinfo) or True
-    assert all(d['in'] in in_locations for d in vinfo)
-    # Not super informative but reveals some data relevant to swagger/etc.
-
-    print('   ', len(vinfo))
-    print('   ', dict(ins))
-    from pprint import pprint
-#    pprint(vinfo)
-    print()
-
-    return
-  finally:
-    globals().update(locals())
-
-def petstore_validator(endpoint, verb):
-  try:
-    """Return a function to validata parameters for `endpoint`.
-    """
-    rs = raw_swagger(local.swagger.petstore)
-    with_refs = jsonref.loads(json.dumps(rs))
-    thing = with_refs['paths'][endpoint]
-    jdoc = with_refs['paths'][endpoint][verb]
-    vinfo = jdoc['parameters']
-    schema = schema_trans(vinfo, verb)
-    return schema
-
-    is_valid = lambda ob: Draft7Validator(schema, format_checker=FormatChecker()).is_valid(ob)
-    return is_valid
-  finally:
-    globals().update(locals())
-
-sample_data = {
-    'username': 'merlin', 
-    'file': 'foofile', 
-    'api_key': 'foobar', 
-    'additionalMetadata': 'foof', 
-    'name': 'yourName', 
-#    'status': 'sold', 
-    'status': ['sold'], 
-    'password': 'xxxxx', 
-    'petId': 99, 
-    'orderId': 9, 
-    'tags': ['foo']
-}
+# def schema_trans(vinfo): pass
+# def schema_trans(vinfo, verb):
+#   try:
+#     ins = defaultdict(set)
+#     in_locations = 'body path formData query header'.split()   # data re swagger
+#     for d in vinfo:   # tmp
+#         ins[d['in']].add(d['name'])
+#         assert d['in'] in in_locations
+#         assert 'in' in d
+# #        assert 'schema' in d
+#     if verb == 'post':
+#         assert all(d['in']=='body' for d in vinfo) or True
+#     assert all(d['in'] in in_locations for d in vinfo)
+#     # Not super informative but reveals some data relevant to swagger/etc.
+# 
+#     print('   ', len(vinfo))
+#     print('   ', dict(ins))
+#     from pprint import pprint
+# #    pprint(vinfo)
+#     print()
+# 
+#     return
+#   finally:
+#     globals().update(locals())
 
 
+# def petstore_validator(endpoint, verb):
+#   try:
+#     """Return a function to validata parameters for `endpoint`.
+#     """
+#     rs = raw_swagger(local.swagger.petstore)
+#     with_refs = jsonref.loads(json.dumps(rs))
+#     thing = with_refs['paths'][endpoint]
+#     jdoc = with_refs['paths'][endpoint][verb]
+#     vinfo = jdoc['parameters']
+#     schema = schema_trans(vinfo, verb)
+#     return schema
+# 
+#     is_valid = lambda ob: Draft7Validator(schema, format_checker=FormatChecker()).is_valid(ob)
+#     return is_valid
+#   finally:
+#     globals().update(locals())
 
-# schema fetching
 
-# TODO: note petstore is the only current api with multiple verbs per endpoint.
 def petstore_investigate_endpoints():
   try:
     schemaless_params = set()
@@ -549,8 +423,6 @@ def petstore_investigate_endpoints():
                 dv = Draft7Validator(schema, format_checker=FormatChecker())
                 sd = sample_data[pname]
 
-
-
                 if 'schema' in pram:
                     schema = pram['schema']
                 has_schema = True if 'schema' in pram else False
@@ -579,9 +451,6 @@ def petstore_investigate_endpoints():
                         if pname == 'file': return
 #                        if pname == 'status': return
                     print('                   ', flag)
-
-#            is_valid = petstore_validator(endpoint, verb)
-#            schema = is_valid
         continue
         break
 
@@ -590,129 +459,6 @@ def petstore_investigate_endpoints():
         continue
   finally:
     globals().update(locals())
-# I am a data concierge
-# I am a data concierge
-# I am a data concierge
-# I am a data concierge
 
-def petstore_validate_and_call():
-  try:
-    rs = raw_swagger(local.swagger.petstore)       # 
-    with httpx.Client(base_url=local.api_base.petstore) as client:   # 
-        for endpoint in endpoint_names(rs):
-            if endpoint not in test_parameters:
-                continue
-            things = test_parameters[endpoint]
-            for verb in things:
-                print(endpoint, verb)
-                for params in things[verb]['good']:
-                    print('  good .............', params)
-                for params in things[verb]['bad']:
-                    print('  bad .............', params)
-
-                # TODO: insert params approbriately here.
-                # destinations...
-                #   header
-                #   body
-                #   query
-                #   path
-                #   ??
-                # There is a lot involved here.
-                # Need to figure out where everything goes.
-
-            continue
-
-            for verb in things:
-                print(endpoint, verb)
-                ep = insert_endpoint_params(ep, sample_query_params)
-                print('   calling .............', ep)
-                for params in things['good']:
-                    assert is_valid(params)
-                    print('   ok good valid', params)
-                    r = client.get(ep, params=params, headers=head)
-                    assert r.status_code == 200
-                    # /proteins endpoint return XML!!!!
-                    # Until we pass the right header.
-                    rj = r.json()
-                for params in things['bad']:
-                    assert is_valid(params)  # TODO: fix
-                    print('   grrr bad but VALID', params)
-                    r = client.get(ep, params=params)
-                    assert r.status_code != 404    # Bad endpoint
-                    assert r.status_code in [400, 500]    # Bad Parameter
-  finally:
-    globals().update(locals())
-
-
-def petstore_validate_and_call1():
-  try:
-    with httpx.Client(base_url=local.api_base.petstore) as client:   # 
-        for endpoint in endpoint_names(rs):
-            ep = endpoint
-            ep0 = ep
-            if ep in test_parameters:
-                things = test_parameters[ep]
-                ep = insert_endpoint_params(ep, sample_query_params)
-                # TODO: there is more to do than just insert_endpoint_params.
-                # The petstore has a good variety of things.
-                # parameters need to be inserted in
-                # headers
-                # url
-                #     path
-                #     query
-                # body
-                # fornData ?????? == body ?????
-                if ep0 != ep:
-                    print('   calling .............', ep)
-                for params in things['good']:
-                    assert is_valid(params)
-                    print('   ok good valid', params)
-                    r = client.get(ep, params=params, headers=head)
-                    assert r.status_code == 200
-                    # /proteins endpoint return XML!!!!
-                    # Until we pass the right header.
-                    rj = r.json()
-                    if 'proteom' not in ep:
-                        if r.text:
-                            good_result = r.json()
-                            if good_result and type(good_result) is list:
-                                good_result = good_result[0]
-                            if not good_result:
-                                L = 0
-                            else:
-                                L = good_result['sequence']['length']
-                for params in things['bad']:
-                    assert is_valid(params)  # TODO: fix
-                    assert is_valid(params)  # TODO: fix
-                    assert is_valid(params)  # TODO: fix
-                    print('   grrr bad but VALID', params)
-                    r = client.get(ep, params=params)
-                    assert r.status_code != 404    # Bad endpoint
-                    assert r.status_code in [400, 500]    # Bad Parameter
-                    # or Server Error
-                    # 500 from /zones/forecast/{zoneId}/stations
-                    # with {'limit': '100'}
-  finally:
-    globals().update(locals())
-
-
-pr_faq = """
-This system makes it easy for intelligent persons, familiar with the API to
-create a representation of the API in Python and perform all the actions of the
-API, as described in the OpenAPI file.
-
-Why not use DAO?
-How to get started?
-
-
-"""
-
-
-# NOT specific to NWS except for base_url
-def nws_call(endpoint, params=None):
-    with httpx.Client(base_url=local.api_base.nws) as client:
-        r = client.get(endpoint, params=params)
-        assert r.status_code == 200
-    return r.json()
 
 
