@@ -420,4 +420,13 @@ nests = [1, 2, [3, 4, [5],['hi']], [6, [[[7, 'hello']]]]]
 assert list(flatten(nests)) == [1, 2, 3, 4, 5, 'hi', 6, 7, 'hello']
 # snappy
 
+class DotDict(dict):
+    """
+    >>> d = DotDict(foo=2)
+    >>> assert d['foo'] == d.foo
+    """
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
+
 
